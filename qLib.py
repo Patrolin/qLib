@@ -73,8 +73,14 @@ print(pi, math.pi)
 
 # gcd(a/b, c/d) = gcd(a, c) / lcm(b, d)
 
+# gauss quadrature, lobatto, quadrature, chebyshev quadrature
+
 def gamma(x):
-  pass
+  x -= 1
+  #return (1 + 1 / (12 * x) + 1 / (288 * x**2) - 139 / (51840 * x**3)) * (x**x * (math.tau * x)**.5) / math.e**x
+  return (x**2 + 1 / 24 * x + 293 / 8640) / (x**2 - 1 / 24 * x + 293 / 8640) * (math.tau * x)**.5 * (x / math.e)**x
 
 def beta(x):
   pass
+
+print(gamma(0), gamma(2), gamma(3), gamma(4), gamma(5), gamma(6), gamma(13))
