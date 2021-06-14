@@ -44,30 +44,54 @@ def C(n: int, k: int) -> int:
 epsilon = 1e-8
 
 def minimize(x0: List[float], f: Callable[[List[float]], float], ro: float = 0.9) -> List[float]:
-  # find a local minimum for a function with continuous gradient using AdaDelta
+  # find a local minimum for a function with continuous gradient using fixed AdaDelta
   mean_square_delta = [0.0] * len(x0)
   mean_square_gradient = [0.0] * len(x0)
   gradient = 1.0
+  n = 0
   while abs(gradient) > epsilon:
+    n += 1
     for j in range(len(x0)):
       x1 = list(x0)
       x1[j] += epsilon
       gradient = (f(x1) - f(x0)) / epsilon
-      mean_square_gradient[j] = ro * mean_square_gradient[j] + (1 - ro) * gradient**2
+      mean_square_gradient[j] = ro * mean_square_gradient[j] + (1 - ro) * gradient**2 / n**2
       delta_x = -((mean_square_delta[j] + epsilon) / (mean_square_gradient[j] + epsilon))**.5 * gradient
       x0[j] += delta_x
-      mean_square_delta[j] = ro * mean_square_delta[j] + (1 - ro) * delta_x**2
+      mean_square_delta[j] = ro * mean_square_delta[j] + (1 - ro) * delta_x**2 / n**2
       #print(x1, gradient)
+  print(n)
   return x0
 
-#phi1 = minimize([1.0], lambda x0: (x0[0]**2 - x0[0] - 1)**2)[0]
-#phi2 = minimize([1.0], lambda x0: (x0[0]**3 - x0[0] - 1)**2)[0]
-#phi3 = minimize([1.0], lambda x0: (x0[0]**4 - x0[0] - 1)**2)[0]
-#phi4 = minimize([1.0], lambda x0: (x0[0]**5 - x0[0] - 1)**2)[0]
-#print(phi1, phi2, phi3, phi4) # 1.618033983547484 1.3247179522114612 1.2207440795921793 1.1673039732520734
+def _minimize(x0: List[float], f: Callable[[List[float]], float], ro: float = 0.95) -> List[float]:
+  # find a local minimum for a function with continuous gradient using a moving average :/
+  mean_gradients = [0.0] * len(x0)
+  gradient = 1.0
+  n = 0
+  loop = 1
+  while loop:
+    loop = 0
+    n += 1
+    for j in range(len(x0)):
+      x1 = list(x0)
+      x1[j] += epsilon
+      gradient = (f(x1) - f(x0)) / epsilon
+      mean_gradients[j] = ro * mean_gradients[j] + (1 - ro) * gradient
+      delta_x = -mean_gradients[j]
+      loop |= (abs(gradient) > epsilon)
+      x0[j] += delta_x
+      print(x0, mean_gradients)
+  print(n)
+  return x0
 
-#e = minimize([1.0], lambda x0: ((x0[0]**(1 + epsilon) - x0[0]) / epsilon - x0[0])**2)[0]
-#print(e) # 2.7182818194466964
+phi1 = minimize([1.0], lambda x0: (x0[0]**2 - x0[0] - 1)**2)[0]
+phi2 = minimize([1.0], lambda x0: (x0[0]**3 - x0[0] - 1)**2)[0]
+phi3 = minimize([1.0], lambda x0: (x0[0]**4 - x0[0] - 1)**2)[0]
+phi4 = minimize([1.0], lambda x0: (x0[0]**5 - x0[0] - 1)**2)[0]
+print(phi1, phi2, phi3, phi4) # 1.618033983547484 1.3247179522114612 1.2207440795921793 1.1673039732520734
+
+e = minimize([1.0], lambda x0: ((x0[0]**(1 + epsilon) - x0[0]) / epsilon - x0[0])**2)[0]
+print(e) # 2.7182818194466964
 
 pi = 0
 delta_x = 1
@@ -92,7 +116,10 @@ def evalPolynomial(W: List[float], x: float) -> float:
   return total
 
 L5 = Legendre(5)
-print(minimize([0], lambda x0: evalPolynomial(L5, x0[0])**2))
+print(minimize([0.0], lambda x0: evalPolynomial(L5, x0[0])**2))
+print(minimize([0.5], lambda x0: evalPolynomial(L5, x0[0])**2))
+print(minimize([0.0, 0.0], lambda x0: (x0[0] + 1)**2 + (x0[1] + 1)**2))
+#print(minimize([1.0], lambda x0: evalPolynomial(L5, x0[0])**2))
 #print([minimize([i / 10], lambda x0: evalPolynomial(L5, x0[0])**2) for i in range(-10, 11, 1)])
 
 # pi = atan(1)
