@@ -37,126 +37,41 @@ epsilon = 1e-6
 def sign(x: float) -> int:
   return (x > 0) - (x < 0)
 
-def bisection_solve(a: float, b: float, f: Callable[[float], float]) -> float:
-  # find the root x of f(x) in [a, b]
+def bisection_solve(a: float, b: float, f: Callable[float, float]) -> float:
+  # find a root x of f(x) on [min(a,b), max(a,b)] if sign(f(a)) != sign(f(b))
   sa = sign(f(a))
-  if sa == 0: return a
-  sb = sign(f(b))
-  if sb == 0: return b
-  if sa == sign(b):
+  if sign(f(b)) == sa:
     return ValueError("sign(f(a)) == sign(f(b))")
   while True:
     x = (a + b) / 2
-    sx = sign(f(x))
     if x == a or x == b: return x
+    sx = sign(f(x))
     if sx == sa:
       a = x
-      sa = sx
     else:
       b = x
+
+def wegsteins_fixed_point(x1: float, g: Callable[float, float]) -> float:
+  # find a root x of f(x)
+  x2 = g(x1)
+  dx = 1.0
+  while True:
+    b = (x1 + g(x2) - x2 - g(x1))
+    if b != 0:
+      x3 = (x1 * g(x2) - x2 * g(x1)) / b
+      dx = x3 - x2
+    else:
+      x3 = x2 + dx
+    if x3 == x2:
+      return x3
+    x1 = x2
+    x2 = x3
 
 phi1 = bisection_solve(1.0, 2.0, lambda x: x**2 - x - 1)
 phi2 = bisection_solve(1.0, 2.0, lambda x: x**3 - x - 1)
 phi3 = bisection_solve(1.0, 2.0, lambda x: x**4 - x - 1)
 phi4 = bisection_solve(1.0, 2.0, lambda x: x**5 - x - 1)
 print(phi1, phi2, phi3, phi4) # 1.618033988749895 1.3247179572447458 1.2207440846057596 1.1673039782614185
-
-def newtons_solve(x: float, f: Callable[[float], float]) -> float:
-  # find a root x if f(x), given lim (x -> +-inf) d/dx f(x) != 0
-  dx = 1.0
-  while abs(dx) > epsilon:
-    dy_dx = (f(x + epsilon) - f(x)) / epsilon
-    if dy_dx != 0:
-      dx = -f(x) / dy_dx
-    x = x + dx
-  return x
-
-# m = 1/2 + (x1 - x2) / (x3 - 2*x2 + x1)
-
-def minimize(x0: List[float], f: Callable[[List[float]], float], ro: float = 0.9) -> List[float]:
-  # find a local minimum for a function with continuous gradient using fixed AdaDelta
-  gradient = [0.0] * len(x0)
-  mean_square_gradient = 0.0
-  delta_x = [0.0] * len(x0)
-  mean_square_delta_x = 0.0
-  n = 0
-  loop = 1.0
-  while loop > epsilon**2:
-    loop = 0
-    n += 1
-    x1 = list(x0)
-    x1[0] += epsilon
-    gradient[0] = (f(x1) - f(x0)) / epsilon
-    for j in range(1, len(x0)):
-      x1[j - 1] = x0[j - 1]
-      x1[j] += epsilon
-      gradient[j] = (f(x1) - f(x0)) / epsilon
-    square_gradient = sum(g**2 for g in gradient)
-    loop += square_gradient
-    mean_square_gradient = ro * mean_square_gradient + (1 - ro) * square_gradient
-    for j in range(len(x0)):
-      #yee = math.tanh(n - 1)
-      #yee = (n - 1) / n
-      yee = 0.5
-      k = ((mean_square_delta_x + epsilon) / (mean_square_gradient + epsilon))**.5
-      delta_x[j] = -gradient[j] * (yee * k + (1 - yee) * 1)
-      x0[j] += delta_x[j]
-    square_delta_x = sum(dx**2 for dx in delta_x)
-    mean_square_delta_x = ro * mean_square_delta_x + (1 - ro) * square_delta_x
-    #print(x0, gradient)
-    import time
-    time.sleep(.02)
-  print(n, x0, gradient)
-  return x0
-
-def newtons_minimize(x: float, f: Callable[[float], float], ro: float = 0.9) -> float:
-  mean_dx = 0.0
-  dx = 1.0
-  while abs(dx) > epsilon:
-    dy_dx = (f(x + epsilon) - f(x)) # / epsilon
-    d2y_dx2 = (f(x + 2 * epsilon) - 2 * f(x + epsilon) + f(x)) / epsilon # / epsilon
-    dx = -dy_dx / d2y_dx2
-    mean_dx = (1 - ro) * mean_dx + ro * dx
-    x = x + dx
-  return x
-
-def fixed_point(x: float, g: Callable[[float], float], ro: float = 1.0) -> float:
-  mean_dx = 0.0
-  dx = 1.0
-  while abs(dx) > epsilon:
-    x1 = g(x)
-    dx = x1 - x
-    mean_dx = (1 - ro) * mean_dx + ro * dx
-    x = x + mean_dx
-  return x
-
-def wegsteins(x0: float, g: Callable[[float], float]) -> float:
-  x1 = g(x0)
-  x2 = g(x1)
-  print(x0, x1, x2)
-  while abs(x2 - x1) > epsilon:
-    if x1 == x0:
-      tmp = x2
-      x2 = g(x1) + 2 * epsilon
-      x0 = x1
-      x1 = tmp
-      continue
-    a = (x2 - x1) / (x1 - x0)
-    if a == 1:
-      tmp = x2
-      x2 = g(x1) + 2 * epsilon
-      x0 = x1
-      x1 = tmp
-      continue
-    q = a / (a - 1)
-    tmp = x2
-    x2 = q * x1 + (1 - q) * g(x1)
-    x0 = x1
-    x1 = tmp
-    print(x0, x1, x2)
-    import time
-    time.sleep(.02)
-  return x2
 
 # exp, expm1, log1p
 
@@ -169,19 +84,13 @@ def log2(x: float) -> float:
 def log10(x: float) -> float:
   return log(x) / log(10)
 
-#e = minimize([3.0], lambda x0: ((x0[0]**(1 + epsilon) - x0[0]) / epsilon - x0[0])**2)[0]
-#print(e) # 2.7186029435049646
-
 #print(log(2), log(1), log(e), log(10), log(16))
 
-pi = 0
-delta_x = 1
-i = 0
-while abs(delta_x) > 0:
-  delta_x = 2 / 16**i * (4 / (8 * i + 1) - 2 / (8 * i + 4) - 1 / (8 * i + 5) - 1 / (8 * i + 6))
-  pi += delta_x
-  i += 1
-#print(pi) # 6.283185307179586
+e = 2.718281828459045
+tau = 6.283185307179586
+halftau = tau / 2 # 3.141592653589793
+quartertau = halftau / 2 # 1.5707963267948966
+print(e, tau, halftau, quartertau)
 
 from collections import UserList
 
@@ -207,13 +116,7 @@ class Polynomial(UserList):
     W = Polynomial(self.data)
     X = [0.0] * (len(W) - 1)
     for i in range(len(W) - 1):
-      x = 0.0
-      dx = 1.0
-      while abs(dx) > epsilon:
-        y, dy_dx = W.eval(x)
-        if dy_dx != 0:
-          dx = -y / dy_dx
-        x = x + dx
+      x = newtons_solve(0.0, lambda x0: W.eval(x0))
       X[i] = x
       for j in range(len(W) - 2, -1, -1):
         W[j] += W[j + 1] * x
@@ -246,18 +149,19 @@ class WilkinsonStable(Polynomial):
         carry = w
     self.data = W
 
-def Legendre(n: int) -> List[float]:
-  L = [0] * (n + 1)
-  for i in range(n + 1):
-    c = (n + i - 1) / 2
-    L[i] = 2**n * C(n, i) * V(c, n) / P(n)
-  return L
+class Legendre(Polynomial):
+  def __init__(self, N=20):
+    W = [0] * (N + 1)
+    for i in range(N + 1):
+      c = (N + i - 1) / 2
+      W[i] = 2**N * C(N, i) * V(c, N) / P(N)
+    self.data = W
 
 #p = Polynomial([1, 0, 1])
 #p = Wilkinson(10)
-p = Polynomial(Wilkinson(20))
-print(p)
-print(p.roots())
+#p = Polynomial(Legendre(20))
+#print(p)
+#print(p.roots())
 #print(minimize([0.0], lambda x0: wilkinson.eval(x0[0])**2)[0])
 #print(f'\n{p.roots()}')
 
