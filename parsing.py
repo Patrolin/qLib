@@ -110,14 +110,14 @@ class Node:
 
 PRIORITY = {
     TokenType.Root.value: 0,
+    TokenType.LeftBracket.value: 0,
+    TokenType.RightBracket.value: 0,
     TokenType.Plus.value: 1,
     TokenType.Minus.value: 1,
     TokenType.Star.value: 2,
     TokenType.Slash.value: 2,
     TokenType.Int.value: 91,
     TokenType.Float.value: 91,
-    TokenType.LeftBracket.value: 92,
-    TokenType.RightBracket.value: 92,
 }
 
 def parse(l: list, start=0):
@@ -135,14 +135,14 @@ def parse(l: list, start=0):
         if start >= len(l):
           return root
         break
-      elif TokenType.Plus.value <= l[start].type.value <= TokenType.Minus.value:
+      elif TokenType.Plus.value <= l[start].type.value <= TokenType.Minus.value or l[start].type.value == TokenType.LeftBracket.value:
         # reject invalid UnaryOps?
         previous = previous.set_right(Node(l[start].type))
         start += 1
         if start >= len(l):
           return root
-      elif TokenType.LeftBracket.value <= l[start].type.value <= TokenType.RightBracket.value:
-        pass
+      else:
+        raise Exception(f'invalid unary operator TokenType.{l[start].type.name}')
 
     # parse BinaryOp
     while True:
@@ -156,6 +156,28 @@ def parse(l: list, start=0):
         start += 1
         if start >= len(l):
           return root
+      elif l[start].type.value == TokenType.LeftBracket.value:
+        previous = previous.drop_left(Node(TokenType.Star))
+        node = Node(l[start].type)
+        node.value = l[start].value
+        previous = previous.set_right(node)
+        start += 1
+        if start >= len(l):
+          return root
+        break
+      elif l[start].type.value == TokenType.RightBracket.value:
+        while True:
+          previous = previous.parent
+          if previous.type.value == TokenType.LeftBracket.value:
+            break
+          elif previous.type.value == TokenType.Root.value:
+            node = Node(TokenType.LeftBracket)
+            node.set_right(previous.right)
+            previous = previous.set_right(node)
+            break
+        start += 1
+        if start >= len(l):
+          return root
       else:
         previous = previous.drop_left(Node(l[start].type))
         start += 1
@@ -163,6 +185,7 @@ def parse(l: list, start=0):
           return root
         break
 
-print(parse(tokenize('1+1')))
-print(parse(tokenize('1+1*2')))
-print(parse(tokenize('1*1+2')))
+#print(parse(tokenize('1+1*2')))
+#print(parse(tokenize('1*1+2')))
+#print(parse(tokenize('(1+1)*2')))
+print(parse(tokenize('2(1+1)')))
