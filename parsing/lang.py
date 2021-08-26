@@ -7,7 +7,7 @@ u32 xorshift(u32 x){
 }
 main(){
   if a == b{
-
+    u32 x = 5+2 mod 2 mod 3
   }
   if a == b{
 
@@ -52,3 +52,12 @@ union Object{
   Sphere
 }
 '''
+
+from enum import Enum
+
+class TokenType(Enum):
+  Identifier = 0
+  Number = 1
+  Bracket = 2
+  CurlyBracket = 3
+  Operator

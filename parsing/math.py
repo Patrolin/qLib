@@ -2,12 +2,12 @@ from enum import Enum
 
 class TokenType(Enum):
   Root = 0
-  Int = 1
-  Float = 2
-  Plus = 3
-  Minus = 4
-  Star = 5
-  Slash = 6
+  Plus = 1
+  Minus = 2
+  Star = 3
+  Slash = 4
+  Int = 5
+  Float = 6
   LeftBracket = 7
   RightBracket = 8
 
@@ -109,27 +109,28 @@ class Node:
   def __repr__(self):
     return self.repr()
 
-TOKEN_PRIORITY = {
-  TokenType.Root.value: 0,
-  TokenType.LeftBracket.value: 0,
-  TokenType.RightBracket.value: 1,
-  TokenType.Plus.value: 2,
-  TokenType.Minus.value: 2,
-  TokenType.Star.value: 3,
-  TokenType.Slash.value: 3,
-  TokenType.Int.value: 4,
-  TokenType.Float.value: 4,
-}
-LOWEST_PRIORITY = 0
-RIGHT_BRACKET_PRIORITY = 1
+
+ROOT_PRIORITY = 0
+CLOSING_BRACKET_PRIORITY = 1
 ADDITION_PRIORITY = 2
 MULTIPLICATION_PRIORITY = 3
-BLANK_MULTIPLICATION_PRIORITY = 4
+IMPLICIT_MULTIPLICATION_PRIORITY = 4
 HIGHEST_PRIORITY = 5
+TOKEN_PRIORITY = {
+  TokenType.Root.value: ROOT_PRIORITY,
+  TokenType.LeftBracket.value: ROOT_PRIORITY,
+  TokenType.RightBracket.value: CLOSING_BRACKET_PRIORITY,
+  TokenType.Plus.value: ADDITION_PRIORITY,
+  TokenType.Minus.value: ADDITION_PRIORITY,
+  TokenType.Star.value: MULTIPLICATION_PRIORITY,
+  TokenType.Slash.value: MULTIPLICATION_PRIORITY,
+  TokenType.Int.value: HIGHEST_PRIORITY,
+  TokenType.Float.value: HIGHEST_PRIORITY,
+}
 
 def parse(l: list, start=0):
   # return root of AST
-  root = Node(TokenType.Root, 0)
+  root = Node(TokenType.Root, ROOT_PRIORITY)
   previous = root
   while True:
     # parse Literal | UnaryOp
@@ -153,49 +154,42 @@ def parse(l: list, start=0):
 
     # parse BinaryOp
     while True:
-      while previous.parent.priority >= TOKEN_PRIORITY[l[start].type.value]: # '>=' is left-associative; '>' would be right-associative
+      if TokenType.Plus.value <= l[start].type.value <= TokenType.Minus.value:
+        p = ADDITION_PRIORITY
+      elif TokenType.Star.value <= l[start].type.value <= TokenType.Slash.value:
+        p = MULTIPLICATION_PRIORITY
+      elif TokenType.Int.value <= l[start].type.value <= TokenType.LeftBracket.value:
+        p = IMPLICIT_MULTIPLICATION_PRIORITY
+      while previous.parent.priority >= p: # '>=' is left-associative; '>' would be right-associative
         previous = previous.parent
-      if TokenType.Int.value <= l[start].type.value <= TokenType.Float.value:
-        previous = previous.drop_left(Node(TokenType.Star, BLANK_MULTIPLICATION_PRIORITY))
-        node = Node(l[start].type, HIGHEST_PRIORITY)
-        node.value = l[start].value
-        previous = previous.set_right(node)
-        start += 1
-        if start >= len(l):
-          return root
-      elif l[start].type.value == TokenType.LeftBracket.value:
-        previous = previous.drop_left(Node(TokenType.Star))
-        node = Node(l[start].type, LOWEST_PRIORITY)
-        node.value = l[start].value
-        previous = previous.set_right(node)
+      if TokenType.Plus.value <= l[start].type.value <= TokenType.Slash.value:
+        previous = previous.drop_left(Node(l[start].type, p))
         start += 1
         if start >= len(l):
           return root
         break
+      elif TokenType.Int.value <= l[start].type.value <= TokenType.LeftBracket.value:
+        previous = previous.drop_left(Node(TokenType.Star, p))
+        node = Node(l[start].type, TOKEN_PRIORITY[l[start].type.value])
+        node.value = l[start].value
+        previous = previous.set_right(node)
+        start += 1
+        if start >= len(l):
+          return root
+        if node.type.value == TokenType.LeftBracket.value:
+          break
       elif l[start].type.value == TokenType.RightBracket.value:
         previous = previous.parent
         if previous.type.value == TokenType.Root.value:
-          node = Node(TokenType.LeftBracket, LOWEST_PRIORITY)
+          node = Node(TokenType.LeftBracket, ROOT_PRIORITY)
           node.set_right(previous.right)
           previous = previous.set_right(node)
         start += 1
         if start >= len(l):
           return root
-      elif TokenType.Plus.value <= l[start].type.value <= TokenType.Minus.value:
-        previous = previous.drop_left(Node(l[start].type, ADDITION_PRIORITY))
-        start += 1
-        if start >= len(l):
-          return root
-        break
-      elif TokenType.Star.value <= l[start].type.value <= TokenType.Slash.value:
-        previous = previous.drop_left(Node(l[start].type, MULTIPLICATION_PRIORITY))
-        start += 1
-        if start >= len(l):
-          return root
-        break
 
 #print(parse(tokenize('1+1*2')))
 #print(parse(tokenize('1*1+2')))
 #print(parse(tokenize('(1+1)*2')))
 #print(parse(tokenize('1-2+3-4+5')))
-print(parse(tokenize('1*(2+3) / 4*(5+6)')))
+print(parse(tokenize('1(2+3) / 4(5+6)')))
