@@ -76,21 +76,22 @@ print(tokenize('123 + 3.14 * -2'))
 print(tokenize('123 - 2 3.14'))
 
 class Node:
-  def __init__(self, tokenType: TokenType):
+  def __init__(self, tokenType: TokenType, priority: int):
     self.type = tokenType
+    self.priority = priority
     self.parent = None
     self.right = None
     self.left = None
     self.value = None
 
-  def set_right(self, node):
-    node.parent = self
-    self.right = node
-    return node
-
   def set_left(self, node):
     node.parent = self
     self.left = node
+    return node
+
+  def set_right(self, node):
+    node.parent = self
+    self.right = node
     return node
 
   def drop_left(self, node):
@@ -100,35 +101,41 @@ class Node:
 
   def repr(self, depth=0):
     newline = "\n"
-    value = ": "+repr(self.value) if TokenType.Int.value <= self.type.value <= TokenType.Float.value else ""
-    left = self.left.repr(depth + 1) if self.left != None else f'\n{(depth+1)*" "}None'
-    right = self.right.repr(depth + 1) if self.right != None else f'\n{(depth+1)*" "}None'
-    return f'{newline if depth > 0 else ""}{depth*" "}{self.type}{value}{left}{right}'
+    value = " "+repr(self.value) if TokenType.Int.value <= self.type.value <= TokenType.Float.value else ""
+    left = self.left.repr(depth + 1) if self.left != None else f'\n{(depth+1)*"  "}None'
+    right = self.right.repr(depth + 1) if self.right != None else f'\n{(depth+1)*"  "}None'
+    return f'{newline if depth > 0 else ""}{depth*"  "}{self.type}<{self.priority}>{value}{left}{right}'
 
   def __repr__(self):
     return self.repr()
 
-PRIORITY = {
-    TokenType.Root.value: 0,
-    TokenType.LeftBracket.value: 0,
-    TokenType.RightBracket.value: 0,
-    TokenType.Plus.value: 1,
-    TokenType.Minus.value: 1,
-    TokenType.Star.value: 2,
-    TokenType.Slash.value: 2,
-    TokenType.Int.value: 91,
-    TokenType.Float.value: 91,
+TOKEN_PRIORITY = {
+  TokenType.Root.value: 0,
+  TokenType.LeftBracket.value: 0,
+  TokenType.RightBracket.value: 1,
+  TokenType.Plus.value: 2,
+  TokenType.Minus.value: 2,
+  TokenType.Star.value: 3,
+  TokenType.Slash.value: 3,
+  TokenType.Int.value: 4,
+  TokenType.Float.value: 4,
 }
+LOWEST_PRIORITY = 0
+RIGHT_BRACKET_PRIORITY = 1
+ADDITION_PRIORITY = 2
+MULTIPLICATION_PRIORITY = 3
+BLANK_MULTIPLICATION_PRIORITY = 4
+HIGHEST_PRIORITY = 5
 
 def parse(l: list, start=0):
   # return root of AST
-  root = Node(TokenType.Root)
+  root = Node(TokenType.Root, 0)
   previous = root
   while True:
     # parse Literal | UnaryOp
     while True:
       if TokenType.Int.value <= l[start].type.value <= TokenType.Float.value:
-        node = Node(l[start].type)
+        node = Node(l[start].type, HIGHEST_PRIORITY)
         node.value = l[start].value
         previous = previous.set_right(node)
         start += 1
@@ -137,7 +144,7 @@ def parse(l: list, start=0):
         break
       elif TokenType.Plus.value <= l[start].type.value <= TokenType.Minus.value or l[start].type.value == TokenType.LeftBracket.value:
         # reject invalid UnaryOps?
-        previous = previous.set_right(Node(l[start].type))
+        previous = previous.set_right(Node(l[start].type, TOKEN_PRIORITY[l[start].type.value]))
         start += 1
         if start >= len(l):
           return root
@@ -146,11 +153,11 @@ def parse(l: list, start=0):
 
     # parse BinaryOp
     while True:
-      while PRIORITY[previous.parent.type.value] > PRIORITY[l[start].type.value]:
+      while previous.parent.priority >= TOKEN_PRIORITY[l[start].type.value]: # '>=' is left-associative; '>' would be right-associative
         previous = previous.parent
       if TokenType.Int.value <= l[start].type.value <= TokenType.Float.value:
-        previous = previous.drop_left(Node(TokenType.Star))
-        node = Node(l[start].type)
+        previous = previous.drop_left(Node(TokenType.Star, BLANK_MULTIPLICATION_PRIORITY))
+        node = Node(l[start].type, HIGHEST_PRIORITY)
         node.value = l[start].value
         previous = previous.set_right(node)
         start += 1
@@ -158,7 +165,7 @@ def parse(l: list, start=0):
           return root
       elif l[start].type.value == TokenType.LeftBracket.value:
         previous = previous.drop_left(Node(TokenType.Star))
-        node = Node(l[start].type)
+        node = Node(l[start].type, LOWEST_PRIORITY)
         node.value = l[start].value
         previous = previous.set_right(node)
         start += 1
@@ -166,20 +173,22 @@ def parse(l: list, start=0):
           return root
         break
       elif l[start].type.value == TokenType.RightBracket.value:
-        while True:
-          previous = previous.parent
-          if previous.type.value == TokenType.LeftBracket.value:
-            break
-          elif previous.type.value == TokenType.Root.value:
-            node = Node(TokenType.LeftBracket)
-            node.set_right(previous.right)
-            previous = previous.set_right(node)
-            break
+        previous = previous.parent
+        if previous.type.value == TokenType.Root.value:
+          node = Node(TokenType.LeftBracket, LOWEST_PRIORITY)
+          node.set_right(previous.right)
+          previous = previous.set_right(node)
         start += 1
         if start >= len(l):
           return root
-      else:
-        previous = previous.drop_left(Node(l[start].type))
+      elif TokenType.Plus.value <= l[start].type.value <= TokenType.Minus.value:
+        previous = previous.drop_left(Node(l[start].type, ADDITION_PRIORITY))
+        start += 1
+        if start >= len(l):
+          return root
+        break
+      elif TokenType.Star.value <= l[start].type.value <= TokenType.Slash.value:
+        previous = previous.drop_left(Node(l[start].type, MULTIPLICATION_PRIORITY))
         start += 1
         if start >= len(l):
           return root
@@ -188,4 +197,5 @@ def parse(l: list, start=0):
 #print(parse(tokenize('1+1*2')))
 #print(parse(tokenize('1*1+2')))
 #print(parse(tokenize('(1+1)*2')))
-print(parse(tokenize('2(1+1)')))
+#print(parse(tokenize('1-2+3-4+5')))
+print(parse(tokenize('1*(2+3) / 4*(5+6)')))
