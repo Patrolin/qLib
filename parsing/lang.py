@@ -1,13 +1,31 @@
 '''
 u32 xorshift(u32 x){
-  x ^= x << 13
-  x ^= x << 17
-  x ^= x << 5
+  x = x xor x << 13
+  x = x xor x << 17
+  x = x xor x << 5
   return x
+}
+f32 PHI = 1.618
+f32 PHI2 = 1.3247
+struct QRNG{
+  f32 x = 0.0
+  f32 next(Rand self){
+    self.x = self.x + 1/PHI mod 1
+    return self.x
+  }
+}
+struct QRNG_2{
+  f32 x = 0.0
+  f32 y = 0.0
+  QRNG_2 next(Rand self){
+    self.x = self.x + 1/PHI2 mod 1
+    self.y = self.y + 1/PHI2^2 mod 1
+    return {self.x, self.y}
+  }
 }
 main(){
   if a == b{
-    u32 x = 5+2 mod 2 mod 3
+    u32 x = 5+2 mod 3 mod 2
   }
   if a == b{
 
@@ -15,7 +33,7 @@ main(){
   else{
 
   }
-  switch sign(a-b)
+  switch sign(a-b) // TODO: switch is poorly defined
     -1{
 
     }
@@ -31,7 +49,7 @@ main(){
   for(u32 x) A{
 
   }
-  while i < N{
+  for i < N{
 
   }
 }
@@ -56,8 +74,12 @@ union Object{
 from enum import Enum
 
 class TokenType(Enum):
-  Identifier = 0
-  Number = 1
-  Bracket = 2
-  CurlyBracket = 3
-  Operator
+  Bracket = 0
+  BracketEnd = 1
+  SquareBracket = 2
+  SquareBracketEnd = 3
+  CurlyBracket = 4
+  CurlyBracketEnd = 5
+  Number = 6
+  Symbol = 7
+  Name = 8
