@@ -15,8 +15,6 @@ def isqrt(x: float) -> float:
 
 # (cos, sin, tan) * ('', 'a-', '-h')
 
-# Degrees, Radians
-
 def V(n: int, k: int, step: int = -1) -> int:
   res = 1
   for i in range(k):
@@ -78,6 +76,13 @@ tau = 6.283185307179586
 halftau = tau / 2 # 3.141592653589793
 quartertau = halftau / 2 # 1.5707963267948966
 print(e, tau, halftau, quartertau)
+
+def deg(x: float) -> float:
+  return Deg(x * 360/tau)
+def rad(x: float) -> float:
+  return Rad(x * tau/360)
+
+print(rad(360), deg(tau))
 
 # TODO: globally optimize
 
