@@ -42,6 +42,17 @@ def mode(X: List[float]) -> float:
     # https://en.wikipedia.org/wiki/R-tree
     # https://en.wikipedia.org/wiki/Ball_tree
 
+def var(X: List[float], u: float) -> float:
+  # return the sample variance of X given the mean u in O(n)
+  acc = 0.0
+  for x in X:
+    acc += (x-u)**2
+  return acc / (len(X)-1)
+
+def stdev(X: List[float], u: float) -> float:
+  # return the sample standard deviation of X given the mean u in O(n)
+  return var(X, u)**.5
+
 # quantiles? https://www.cs.wustl.edu/~jain/papers/ftp/psqr.pdf
 
 if __name__ == '__main__':
@@ -51,3 +62,4 @@ if __name__ == '__main__':
   phi = (1 + 5**.5)/2
   X = sorted([(0.5 + i*1/phi) % 1 for i in range(6)])
   print(mode(X), X)
+  print(mean(X), stdev(X, mean(X)))
