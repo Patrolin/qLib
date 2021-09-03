@@ -13,7 +13,7 @@ def mean(X: List[float]) -> float:
   #return res
 
 def median(X: List[float]) -> float:
-  # return the median of a sorted X in O(1)
+  # return the median of a sorted X
   i = len(X)//2
   if len(X)%2 == 1:
     return X[i]

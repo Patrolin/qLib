@@ -43,6 +43,7 @@ def bisection_solve(a: float, b: float, f: Callable[float, float]) -> float:
   if sa == sign(f(b)):
     return ValueError("sign(f(a)) == sign(f(b))")
   while True:
+    # shrink the interval towards some root
     x = (a + b) / 2
     if x == a or x == b: return x
     sx = sign(f(x))
@@ -50,6 +51,8 @@ def bisection_solve(a: float, b: float, f: Callable[float, float]) -> float:
       a = x
     else:
       b = x
+
+# TODO: Nelder-Mead for robust open local optimization
 
 phi1 = bisection_solve(1.0, 2.0, lambda x: x**2 - x - 1)
 phi2 = bisection_solve(1.0, 2.0, lambda x: x**3 - x - 1)
@@ -79,7 +82,7 @@ print(e, tau, halftau, quartertau)
 # TODO: globally optimize
 
 def sin(x: float) -> float:
-  # sin(x) for x in (-halftau, halftau)
+  # return sin(x) for x on (-halftau, halftau)
   y = 2 / quartertau * x - 1 / (quartertau**2) * x
   #return y
   return 0.775 * y + 0.225 * (y * abs(y))
@@ -97,7 +100,14 @@ def cos(x: float) -> float:
 
 # gcd(a/b, c/d) = gcd(a, c) / lcm(b, d)
 
-# gauss quadrature, lobatto, quadrature, chebyshev quadrature
+# https://en.wikipedia.org/wiki/Category:Numerical_integration_(quadrature)
+  #     [-1, 1] https://en.wikipedia.org/wiki/Gauss–Legendre_quadrature
+  #    [0, inf) https://en.wikipedia.org/wiki/Gauss–Laguerre_quadrature
+  # (-inf, inf) https://en.wikipedia.org/wiki/Gauss–Hermite_quadrature
+  #      (a, b) https://en.wikipedia.org/wiki/Newton–Cotes_formulas
+  #     (-1, 1) https://en.wikipedia.org/wiki/Tanh-sinh_quadrature
+  #     (-1, 1) https://en.wikipedia.org/wiki/Gauss–Jacobi_quadrature
+  #     (-1, 1) https://en.wikipedia.org/wiki/Chebyshev–Gauss_quadrature
 
 def gamma(x):
   x -= 1
