@@ -1,11 +1,6 @@
 from typing import *
 import sys
 import traceback
-import collections
-import importlib.util
-spec = importlib.util.spec_from_file_location("statistics", "statistics.py")
-statistics = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(statistics)
 
 RED_COLOR = '\033[0;31m'
 NO_COLOR = '\033[0m'
@@ -79,31 +74,6 @@ def tests_done():
   test_count = 0
   passed_count = 0
 
-class NamedList(collections.UserList):
-  def __init__(self, name, *args, **kwargs):
-    super().__init__(*args, **kwargs)
-    self.name = name
-
-def sortedplot(*Y: Tuple[NamedList], **kwargs):
-  import matplotlib.pyplot as plt
-  LINESTYLES = [
-    (0, (1, 1)), # ***
-    (0, (1, 2, 1, 2, 3, 4)), # **- **-
-    (0, (3, 2, 1, 2, 3, 4)), # -*- -*-
-    (0, (1, 2, 3, 2, 1, 4)), # *-* *-*
-    (0, (3, 2, 3, 4)), # -- --
-  ]
-  fig, ax = plt.subplots()
-  Y = [NamedList(i if 'name' not in y else y.name, y) for i, y in enumerate(Y)]
-  Y = sorted(Y, key=lambda y: statistics.mean(y))
-  for i, y in enumerate(Y):
-    X = [j / (len(y)-1) for j in range(len(y))]
-    ax.plot(X, sorted(y), linestyle=LINESTYLES[i%len(LINESTYLES)], linewidth=1.8, label=y.name)
-  ax.set(xlabel='quantile', xticks=X, ylabel='y', title='Sorted plot', **kwargs)
-  ax.grid()
-  ax.legend()
-  plt.show()
-
 if __name__ == '__main__':
   test((int, []), 0)
   test((int, ['11']), 11)
@@ -115,5 +85,3 @@ if __name__ == '__main__':
   test((test, [[int, [], 'wtf'], 0]), TypeError)
   test((test, [[int], 0]), None)
   tests_done()
-
-  sortedplot([2, 1, 1.1], [1, 1, 1], [1.5, 1.5, 1.5])
