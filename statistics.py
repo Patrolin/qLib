@@ -13,7 +13,7 @@ def mean(X: List[float]) -> float:
   #return res
 
 def median(X: List[float]) -> float:
-  # return the median of a sorted X
+  # return the median of a sorted X in O(1)
   i = len(X)//2
   if len(X)%2 == 1:
     return X[i]
@@ -61,6 +61,7 @@ class NamedList(UserList):
     self.name = name
 
 def sortedplot(*Y: Tuple[NamedList], **kwargs):
+  # plot the sorted Y values in O(n log n)
   import matplotlib.pyplot as plt
   LINESTYLES = [
     (0, (3, 2, 3, 2, 3, 4)), # --- ---
