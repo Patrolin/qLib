@@ -63,11 +63,11 @@ class NamedList(UserList):
 def sortedplot(*Y: Tuple[NamedList], **kwargs):
   import matplotlib.pyplot as plt
   LINESTYLES = [
-    (0, (1, 1)), # ***
-    (0, (1, 2, 1, 2, 3, 4)), # **- **-
+    (0, (3, 2, 3, 2, 3, 4)), # --- ---
+    (0, (1, 1, 1, 1, 1, 3)), # *** ***
     (0, (3, 2, 1, 2, 3, 4)), # -*- -*-
+    (0, (1, 2, 1, 2, 3, 4)), # **- **-
     (0, (1, 2, 3, 2, 1, 4)), # *-* *-*
-    (0, (3, 2, 3, 4)), # -- --
   ]
   fig, ax = plt.subplots()
   Y = [NamedList(i if 'name' not in y else y.name, y) for i, y in enumerate(Y)]
@@ -77,7 +77,7 @@ def sortedplot(*Y: Tuple[NamedList], **kwargs):
     ax.plot(X, sorted(y), linestyle=LINESTYLES[i%len(LINESTYLES)], linewidth=1.8, label=y.name)
   ax.set(xlabel='quantile', xticks=X, ylabel='y', title='Sorted plot', **kwargs)
   ax.grid()
-  ax.legend()
+  ax.legend(prop={'size': 12})
   plt.show()
 
 if __name__ == '__main__':
@@ -89,4 +89,4 @@ if __name__ == '__main__':
   print(mode(X), X)
   print(mean(X), stdev(X, mean(X)))
 
-  sortedplot([2, 1, 1.1], [1, 1, 1], [1.5, 1.5, 1.5])
+  sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
