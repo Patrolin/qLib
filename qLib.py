@@ -15,19 +15,6 @@ def isqrt(x: float) -> float:
 
 # (cos, sin, tan) * ('', 'a-', '-h')
 
-def V(n: int, k: int, step: int = -1) -> int:
-  res = 1
-  for i in range(k):
-    res *= n
-    n += step
-  return res
-
-def P(n: int, step: int = -1) -> int:
-  return V(n, n, step)
-
-def C(n: int, k: int) -> int:
-  return V(n, k) // P(k)
-
 # def C(n: float, k: float) -> float:
 
 epsilon = 1e-6
@@ -77,10 +64,10 @@ halftau = tau / 2 # 3.141592653589793
 quartertau = halftau / 2 # 1.5707963267948966
 print(e, tau, halftau, quartertau)
 
-def deg(x: float) -> float:
-  return Deg(x * 360/tau)
-def rad(x: float) -> float:
-  return Rad(x * tau/360)
+def deg(radians: float) -> float:
+  return Deg(rad * 360/tau)
+def rad(degrees: float) -> float:
+  return Rad(degrees * tau/360)
 
 print(rad(360), deg(tau))
 

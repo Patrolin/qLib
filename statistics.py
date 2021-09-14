@@ -7,18 +7,77 @@ def mean(X: List[float]) -> float:
   for x in X:
     acc += x
   return acc / len(X)
-  #res = 0.0
-  #for i, x in enumerate(X, start=1):
-  #  res += (x-u)/i
-  #return res
+
+def mean_streaming(X: Iterable[float]) -> Generator[float, float, None]:
+  res = 0.0
+  for i, x in enumerate(X, start=1):
+    res += (x-u) / i
+    yield res
+
 
 def median(X: List[float]) -> float:
-  # return the median of a sorted X in O(1)
+  # return the population median of a sorted X in O(1)
   i = len(X)//2
   if len(X)%2 == 1:
     return X[i]
   elif len(X)%2 == 0:
     return (X[i]+X[i+1])/2
+
+def pQuantile(X: list[float], p: float) -> float:
+  # return an estimated p-quantile of X in O(n)
+  q = sorted(X[:5])
+  if len(X) <= 5:
+    return q[round(p*len(X))]
+  n = [i for i in range(5)]
+  n_desired = [0, 2*p, 4*p, 2+2*p, 4]
+  d_n_desired = [0, p/2, p, (1+p)/2, 1]
+  print(d_n_desired)
+  for x in X[5:]:
+
+    #k = 1
+    #if x < q[0]:
+    #  q[0] = x
+    #k += (x >= q[1]) + (x >= q[2]) + (x >= q[3])
+    #if x >= q[4]:
+    #  q[4] = x
+    if (x < q[0]):
+      q[0] = x
+      k = 1
+    elif (q[0] <= x < q[1]):
+      k = 1
+    elif (q[1] <= x < q[2]):
+      k = 2
+    elif (q[2] <= x < q[3]):
+      k = 3
+    elif (q[3] <= x <= q[4]):
+      k = 4
+    elif (q[4] < x):
+      q[4] = x
+      k = 4
+
+    for i in range(k, 5):
+      n[i] += 1
+    for i in range(5):
+      n_desired[i] += d_n_desired[i]
+    print(x)
+    for i in range(1, 4):
+      d = n_desired[i] - n[i]
+      if ((d >= 1) and ((n[i+1] - n[i]) > 1)) or ((d <= -1) and ((n[i-1] - n[i]) < -1)):
+        d = (d > 0) - (d < 0) # todo: link sign()
+        print(i+1, d)
+        q_desired = q[i] + d / (n[i+1] - n[i-1]) * ((n[i]-n[i-1]+d)*(q[i+1]-q[i])/(n[i+1]-n[i]) + (n[i+1]-n[i]-d)*(q[i]-q[i-1])/(n[i]-n[i-1]))
+        print(11, q[i-1], q_desired, q[i+1])
+        if (q[i-1] < q_desired < q[i+1]):
+          q[i] = q_desired
+        else:
+          q[i] = q[i] + d * (q[i+d] - q[i]) / (n[i+d] - n[i])
+        n[i] = n[i] + d
+    print([z+1 for z in n])
+    print([z+1 for z in n_desired])
+    print(q)
+  return q[2]
+# quantiles? https://www.cs.wustl.edu/~jain/papers/ftp/psqr.pdf
+
 
 def mode(X: List[float]) -> float:
   # return an estimated in-distribution mode of a sorted X in O(n)
@@ -53,7 +112,21 @@ def stdev(X: List[float], u: float) -> float:
   # return the sample standard deviation of X given the mean u in O(n)
   return var(X, u)**.5
 
-# quantiles? https://www.cs.wustl.edu/~jain/papers/ftp/psqr.pdf
+def V(n: int, k: int, step: int = -1) -> int:
+  # return (n choose k) * k! in O(k)
+  res = 1
+  for i in range(k):
+    res *= n
+    n += step
+  return res
+
+def P(n: int, step: int = -1) -> int:
+  # return n! in O(n)
+  return V(n, n, step)
+
+def C(n: int, k: int) -> int:
+  # return (n choose k) in O(k)
+  return V(n, k) // P(k)
 
 class NamedList(UserList):
   def __init__(self, name, *args, **kwargs):
@@ -76,7 +149,7 @@ def sortedplot(*Y: Tuple[NamedList], **kwargs):
   for i, y in enumerate(Y):
     X = [j / (len(y)-1) for j in range(len(y))]
     ax.plot(X, sorted(y), linestyle=LINESTYLES[i%len(LINESTYLES)], linewidth=1.8, label=y.name)
-  ax.set(xlabel='quantile', xticks=X, ylabel='y', title='Sorted plot', **kwargs)
+  ax.set(xlabel='p-quantile', xticks=X, ylabel='y', title='Sorted plot', **kwargs)
   ax.grid()
   ax.legend(prop={'size': 12})
   plt.show()
@@ -90,4 +163,7 @@ if __name__ == '__main__':
   print(mode(X), X)
   print(mean(X), stdev(X, mean(X)))
 
-  sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
+  #sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
+  Z = [0.02, 0.5, 0.74, 3.39, 0.83, 22.37, 10.15, 15.43, 38.62, 15.92, 34.6, 10.28, 1.47, 0.4, 0.05, 11.39, 0.27, 0.42, 0.09, 11.37]
+  Z2 = [0.02, 0.5, 0.74, 3.39, 0.83, 22.37, 22.37, 22.37, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62]
+  print(pQuantile(Z[:8], 0.5)) # 6.931
