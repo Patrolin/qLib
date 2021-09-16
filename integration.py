@@ -1,6 +1,6 @@
 from qLib import *
 
-def wegsteins_fixed_point(x1: float, g: Callable[float, float]) -> float:
+def wegsteins_fixed_point(x1: float, g: Callable[[float], float]) -> float:
   # find a root x of f(x)
   x2 = g(x1)
   dx = 1.0
@@ -110,5 +110,5 @@ class Legendre(Polynomial):
 # int from -inf to inf of 1 / (1 + x**2) = pi
 # int from -inf to inf of (sin x) / x = pi
 
-def integrate(f: Callable[float, float], a: float, b: float) -> float:
+def integrate(f: Callable[[float], float], a: float, b: float) -> float:
   pass

@@ -65,9 +65,10 @@ quartertau = halftau / 2 # 1.5707963267948966
 print(e, tau, halftau, quartertau)
 
 def deg(radians: float) -> float:
-  return Deg(rad * 360/tau)
+  return rad * 360 / tau
+
 def rad(degrees: float) -> float:
-  return Rad(degrees * tau/360)
+  return degrees * tau / 360
 
 print(rad(360), deg(tau))
 
@@ -93,13 +94,13 @@ def cos(x: float) -> float:
 # gcd(a/b, c/d) = gcd(a, c) / lcm(b, d)
 
 # https://en.wikipedia.org/wiki/Category:Numerical_integration_(quadrature)
-  #     [-1, 1] https://en.wikipedia.org/wiki/Gauss–Legendre_quadrature
-  #    [0, inf) https://en.wikipedia.org/wiki/Gauss–Laguerre_quadrature
-  # (-inf, inf) https://en.wikipedia.org/wiki/Gauss–Hermite_quadrature
-  #      (a, b) https://en.wikipedia.org/wiki/Newton–Cotes_formulas
-  #     (-1, 1) https://en.wikipedia.org/wiki/Tanh-sinh_quadrature
-  #     (-1, 1) https://en.wikipedia.org/wiki/Gauss–Jacobi_quadrature
-  #     (-1, 1) https://en.wikipedia.org/wiki/Chebyshev–Gauss_quadrature
+#     [-1, 1] https://en.wikipedia.org/wiki/Gauss–Legendre_quadrature
+#    [0, inf) https://en.wikipedia.org/wiki/Gauss–Laguerre_quadrature
+# (-inf, inf) https://en.wikipedia.org/wiki/Gauss–Hermite_quadrature
+#      (a, b) https://en.wikipedia.org/wiki/Newton–Cotes_formulas
+#     (-1, 1) https://en.wikipedia.org/wiki/Tanh-sinh_quadrature
+#     (-1, 1) https://en.wikipedia.org/wiki/Gauss–Jacobi_quadrature
+#     (-1, 1) https://en.wikipedia.org/wiki/Chebyshev–Gauss_quadrature
 
 def gamma(x):
   x -= 1

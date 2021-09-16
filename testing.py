@@ -31,6 +31,7 @@ def test(faw: Union[Tuple[Callable], Tuple[Callable, list], Tuple[Callable, list
   passed = None
   value = None
   exception = None
+  exception_info = None
   try:
     value = f(*args, **kwargs)
     passed = (value == expectedValue)
@@ -47,7 +48,7 @@ def test(faw: Union[Tuple[Callable], Tuple[Callable, list], Tuple[Callable, list
     print(f'{_describe_test(f, args, kwargs)} failed:')
     print(f'  value = {_repr(value or exception)}')
     print(f'  expectedValue = {_repr(expectedValue)}')
-    if exception != None:
+    if exception_info:
       print(f'{RED_COLOR}{"".join(traceback.format_exception(*exception_info)[1:-1])}{NO_COLOR}', end='')
 
 def _repr(x: any) -> str:
