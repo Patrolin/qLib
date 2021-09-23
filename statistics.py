@@ -196,6 +196,6 @@ if __name__ == '__main__':
   
   import numpy as np
   np.random.seed(19680801)
-  x = np.random.randn(100000)
+  x = np.random.normal(0, 1, 100000)
   print(x)
-  histogram(x.tolist(), 10)
+  histogram(x.tolist(), 50)
