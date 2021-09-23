@@ -2,17 +2,15 @@ from collections import deque as LinkedList, UserList
 from typing import *
 
 def mean(X: List[float]) -> float:
-  # return the mean of X in O(n)
+  # return the population/sample mean of X in O(n)
   acc = 0.0
   for x in X:
     acc += x
   return acc / len(X)
 
-def mean_streaming(X: Iterable[float]) -> Generator[float, float, None]:
-  res = 0.0
-  for i, x in enumerate(X, start=1):
-    res += (x - u) / i
-    yield res
+def EMA(x: float, x_old: float, a=0.1):
+  # return the next (exponential moving average) step in O(1)
+  return a * x + (1 - a) * x_old
 
 def median(X: List[float]) -> float:
   # return the population median of a sorted X in O(1)
@@ -23,62 +21,39 @@ def median(X: List[float]) -> float:
     return (X[i] + X[i + 1]) / 2
 
 def pQuantile(X: list[float], p: float) -> float:
-  # return an estimated p-quantile of X in O(n)
+  # return an estimated p-quantile of X in O(n) via P-Square algorithm
   q = sorted(X[:5])
   if len(X) <= 5:
     return q[round(p * len(X))]
   n = [i for i in range(5)]
   n_desired = [0, 2 * p, 4 * p, 2 + 2 * p, 4]
   d_n_desired = [0, p / 2, p, (1 + p) / 2, 1]
-  print(d_n_desired)
   for x in X[5:]:
-    
-    #k = 1
-    #if x < q[0]:
-    #  q[0] = x
-    #k += (x >= q[1]) + (x >= q[2]) + (x >= q[3])
-    #if x >= q[4]:
-    #  q[4] = x
-    k = None
-    if (x < q[0]):
+    k = 1
+    if x < q[0]:
       q[0] = x
-      k = 1
-    elif (q[0] <= x < q[1]):
-      k = 1
-    elif (q[1] <= x < q[2]):
-      k = 2
-    elif (q[2] <= x < q[3]):
-      k = 3
-    elif (q[3] <= x <= q[4]):
-      k = 4
-    elif (q[4] < x):
+    k += (x >= q[1]) + (x >= q[2]) + (x >= q[3])
+    if x >= q[4]:
       q[4] = x
-      k = 4
     
     for i in range(k, 5):
       n[i] += 1
     for i in range(5):
       n_desired[i] += d_n_desired[i]
-    print(x)
     for i in range(1, 4):
       d = n_desired[i] - n[i]
       if ((d >= 1) and ((n[i + 1] - n[i]) > 1)) or ((d <= -1) and ((n[i - 1] - n[i]) < -1)):
-        d = (d > 0) - (d < 0) # todo: link sign()
-        print(i + 1, d)
+        d = (d > 0) - (d < 0)
         q_desired = q[i] + d / (n[i + 1] - n[i - 1]) * ((n[i] - n[i - 1] + d) * (q[i + 1] - q[i]) / (n[i + 1] - n[i]) +
                                                         (n[i + 1] - n[i] - d) * (q[i] - q[i - 1]) / (n[i] - n[i - 1]))
-        print(11, q[i - 1], q_desired, q[i + 1])
         if (q[i - 1] < q_desired < q[i + 1]):
           q[i] = q_desired
         else:
           q[i] = q[i] + d * (q[i + d] - q[i]) / (n[i + d] - n[i])
         n[i] = n[i] + d
-    print([z + 1 for z in n])
-    print([z + 1 for z in n_desired])
-    print(q)
   return q[2]
 
-# quantiles? https://www.cs.wustl.edu/~jain/papers/ftp/psqr.pdf
+# histograms? https://www.cs.wustl.edu/~jain/papers/ftp/psqr.pdf
 
 def mode(X: List[float]) -> float:
   # return an estimated in-distribution mode of a sorted X in O(n)
@@ -167,11 +142,7 @@ if __name__ == '__main__':
   
   #sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
   Z = [
-      0.02, 0.5, 0.74, 3.39, 0.83, 22.37, 10.15, 15.43, 38.62, 15.92, 34.6, 10.28, 1.47, 0.4, 0.05, 11.39, 0.27, 0.42,
-      0.09, 11.37
+      0.02, 0.15, 0.74, 0.83, 3.39, 22.37, 10.15, 15.43, 38.62, 15.92, 34.60, 10.28, 1.47, 0.40, 0.05, 11.39, 0.27,
+      0.42, 0.09, 11.37
   ]
-  Z2 = [
-      0.02, 0.5, 0.74, 3.39, 0.83, 22.37, 22.37, 22.37, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62, 38.62,
-      38.62, 38.62, 38.62
-  ]
-  print(pQuantile(Z[:8], 0.5)) # 6.931
+  print(pQuantile(Z, 0.5)) # exact answer: 6.931

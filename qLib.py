@@ -85,6 +85,10 @@ def cos(x: float) -> float:
   if x > halftau: x -= tau
   return sin(x)
 
+def qerp(x, x1, x2, x3, y1, y2, y3):
+  return ((x - x2) * (x - x3) * (x2 - x3) * y1 - (x - x1) * (x - x3) * (x1 - x3) * y2 + (x - x1) * (x - x2) *
+          (x1 - x2) * y3) / ((x1 - x2) * (x1 - x3) * (x2 - x3))
+
 # Complex, # https://mathworld.wolfram.com/ComplexExponentiation.html
 
 # Vector, Matrix
