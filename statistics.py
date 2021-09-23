@@ -1,6 +1,7 @@
 from collections import deque as LinkedList, UserList
 from typing import *
 
+# sample mean + variance
 def mean(X: List[float]) -> float:
   # return the population/sample mean of X in O(n)
   acc = 0.0
@@ -8,6 +9,18 @@ def mean(X: List[float]) -> float:
     acc += x
   return acc / len(X)
 
+def var(X: List[float], u: float) -> float:
+  # return the sample variance of X given the mean u in O(n)
+  acc = 0.0
+  for x in X:
+    acc += (x - u)**2
+  return acc / (len(X) - 1)
+
+def stdev(X: List[float], u: float) -> float:
+  # return the sample standard deviation of X given the mean u in O(n)
+  return var(X, u)**.5
+
+# infinite streams
 def EMA(x: float, x_old: float, a=0.1):
   # return the next (exponential moving average) step in O(1)
   return a * x + (1 - a) * x_old
@@ -29,17 +42,17 @@ def pQuantile(X: list[float], p: float) -> float:
   n_desired = [0, 2 * p, 4 * p, 2 + 2 * p, 4]
   d_n_desired = [0, p / 2, p, (1 + p) / 2, 1]
   for x in X[5:]:
-    k = 1
+    # add datapoint
+    for i in range(1, 4):
+      n[i] += (q[i] >= x)
+    n[-1] += 1
     if x < q[0]:
       q[0] = x
-    k += (x >= q[1]) + (x >= q[2]) + (x >= q[3])
-    if x >= q[4]:
-      q[4] = x
-    
-    for i in range(k, 5):
-      n[i] += 1
+    if x > q[-1]:
+      q[-1] = x
     for i in range(5):
       n_desired[i] += d_n_desired[i]
+    # interpolate if necessary
     for i in range(1, 4):
       d = n_desired[i] - n[i]
       if ((d >= 1) and ((n[i + 1] - n[i]) > 1)) or ((d <= -1) and ((n[i - 1] - n[i]) < -1)):
@@ -53,6 +66,51 @@ def pQuantile(X: list[float], p: float) -> float:
         n[i] = n[i] + d
   return q[2]
 
+def histogram(X: list[float], bins: int, **kwargs):
+  q = sorted(X[:bins + 1])
+  n = [i for i in range(bins + 1)]
+  for x in X[bins + 1:]:
+    # add datapoint
+    for i in range(1, bins):
+      n[i] += (q[i] >= x)
+    n[-1] += 1
+    if x < q[0]:
+      q[0] = x
+    if x > q[-1]:
+      q[-1] = x
+    # interpolate if necessary
+    for i in range(1, bins):
+      n_desired = i * n[-1] / (bins)
+      d = n_desired - n[i]
+      if ((d >= 1) and ((n[i + 1] - n[i]) > 1)) or ((d <= -1) and ((n[i - 1] - n[i]) < -1)):
+        d = (d > 0) - (d < 0)
+        q_desired = q[i] + d / (n[i + 1] - n[i - 1]) * ((n[i] - n[i - 1] + d) * (q[i + 1] - q[i]) / (n[i + 1] - n[i]) +
+                                                        (n[i + 1] - n[i] - d) * (q[i] - q[i - 1]) / (n[i] - n[i - 1]))
+        if (q[i - 1] < q_desired < q[i + 1]):
+          q[i] = q_desired
+        else:
+          q[i] = q[i] + d * (q[i + d] - q[i]) / (n[i + d] - n[i])
+        n[i] = n[i] + d
+  q = [(q[i] - q[0]) / (q[-1] - q[0]) for i in range(bins + 1)]
+  print(q)
+  
+  import matplotlib.pyplot as plt
+  fig, ax = plt.subplots()
+  widths = [(q[i + 1] - q[i]) for i in range(bins)]
+  heights = [(n[i + 1] - n[i]) for i in range(bins)]
+  print(widths, heights)
+  do_pdf = False
+  for i in range(bins):
+    if do_pdf:
+      ax.add_patch(plt.Rectangle((n[i] / len(X), 0), widths[i], heights[i] / sum(heights)))
+      ax.set_ylim((0, heights[-1]))
+    else:
+      ax.add_patch(plt.Rectangle((n[i] / len(X), 0), .1 / bins, q[i]))
+      ax.set_ylim((0, 1))
+  ax.set(title='Histogram', xlabel='p-quantile', ylabel='y', **kwargs)
+  ax.grid()
+  plt.show()
+
 # histograms? https://www.cs.wustl.edu/~jain/papers/ftp/psqr.pdf
 
 def mode(X: List[float]) -> float:
@@ -61,9 +119,9 @@ def mode(X: List[float]) -> float:
   A = LinkedList(X)
   for n in range(len(X) - 1, 0, -1):
     # remove farthest neighbor relative to the mean
-    a, aDistance = A[0], abs(A[0] - u)
-    b, bDistance = A[-1], abs(A[-1] - u)
-    if aDistance >= bDistance:
+    a, a_distance = A[0], abs(A[0] - u)
+    b, b_distance = A[-1], abs(A[-1] - u)
+    if a_distance >= b_distance:
       u -= (a - u) / n
       A.popleft()
     else:
@@ -77,19 +135,8 @@ def mode(X: List[float]) -> float:
   # https://en.wikipedia.org/wiki/R-tree
   # https://en.wikipedia.org/wiki/Ball_tree
 
-def var(X: List[float], u: float) -> float:
-  # return the sample variance of X given the mean u in O(n)
-  acc = 0.0
-  for x in X:
-    acc += (x - u)**2
-  return acc / (len(X) - 1)
-
-def stdev(X: List[float], u: float) -> float:
-  # return the sample standard deviation of X given the mean u in O(n)
-  return var(X, u)**.5
-
 def V(n: int, k: int, step: int = -1) -> int:
-  # return (n choose k) * k! in O(k)
+  # return variations = (n choose k) * k! in O(k)
   res = 1
   for i in range(k):
     res *= n
@@ -97,11 +144,11 @@ def V(n: int, k: int, step: int = -1) -> int:
   return res
 
 def P(n: int, step: int = -1) -> int:
-  # return n! in O(n)
+  # return permutations = n! in O(n)
   return V(n, n, step)
 
 def C(n: int, k: int) -> int:
-  # return (n choose k) in O(k)
+  # return combinations = (n choose k) in O(k)
   return V(n, k) // P(k)
 
 class NamedList(UserList):
@@ -146,3 +193,9 @@ if __name__ == '__main__':
       0.42, 0.09, 11.37
   ]
   print(pQuantile(Z, 0.5)) # exact answer: 6.931
+  
+  import numpy as np
+  np.random.seed(19680801)
+  x = np.random.randn(100000)
+  print(x)
+  histogram(x.tolist(), 10)
