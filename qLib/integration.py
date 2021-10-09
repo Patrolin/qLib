@@ -19,7 +19,7 @@ def wegsteins_fixed_point(x1: float, g: Callable[[float], float]) -> float:
 from collections import UserList
 
 class Polynomial(UserList):
-  def eval(self, x: complex) -> complex:
+  def eval(self, x: complex) -> Tuple[float, float]:
     # return P(x) and d/dx P(x) via Horner's method
     n = len(self.data)
     A = [[0.0] * n] * 2
@@ -32,7 +32,7 @@ class Polynomial(UserList):
     # d/dx P(x)
     A[1][n - 1] = A[0][n - 1]
     for i in range(n - 2, 0, -1):
-      A[1][i] = A[0][i] + A[1][i + 1] * x
+      A[1][i] = A[0][i] + A[1][i + 1] * x # type: ignore
     
     return A[0][0], A[1][1]
   
