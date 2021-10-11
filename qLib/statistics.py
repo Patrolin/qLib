@@ -1,124 +1,97 @@
 from collections import deque as LinkedList, UserList
 from typing import *
 
-# sample mean + variance
+# (sample mean, sample standard deviation)
 def mean(X: List[float]) -> float:
-  # return the population/sample mean of X in O(n)
+  '''return the population mean = sample mean of X in O(n)'''
   acc = 0.0
   for x in X:
     acc += x
   return acc / len(X)
 
-def var(X: List[float], u: float) -> float:
-  # return the sample variance of X given the mean u in O(n)
+def stdev(X: List[float], u: float) -> float:
+  '''return the sample standard deviation of X given the mean u in O(n)'''
   acc = 0.0
   for x in X:
     acc += (x - u)**2
-  return acc / (len(X) - 1)
-
-def stdev(X: List[float], u: float) -> float:
-  # return the sample standard deviation of X given the mean u in O(n)
-  return var(X, u)**.5
+  return (acc / (len(X) - 1))**0.5
 
 # infinite streams
-def EMA(x: float, x_old: float, a=0.1):
-  # return the next (exponential moving average) step in O(1)
-  return a * x + (1 - a) * x_old
+class EMA:
+  def __init__(self, a=0.1):
+    self.x_old = 0.0
+    self.a = a
+  
+  def next(self, x: float) -> float:
+    '''return the next EMA step in O(1)'''
+    self.x_old = self.a * x + (1 - self.a) * self.x_old
+    return self.x_old
 
-def median(X: List[float]) -> float:
-  # return the population median of a sorted X in O(1)
-  i = len(X) // 2
-  if len(X) % 2 == 1:
-    return X[i]
-  else:
-    return (X[i] + X[i + 1]) / 2
+def _quantile(X: list[float], p: float) -> float:
+  '''return a linearly interpolated quantile of a sorted X in O(1)'''
+  a = p * (len(X) - 1)
+  i = int(a)
+  j = -int(-a // 1)
+  return ((i + 1) - a) * X[i] + (a - i) * X[j]
+
+class pSquare:
+  def __init__(self, p: float, bins=5):
+    self.p = p
+    self.bins = bins
+    self.q: list[float] = []
+    self.n = [i for i in range(self.bins)]
+  
+  def next(self, x: float) -> float:
+    '''return the next P-Squared step in O(1)'''
+    if len(self.q) < self.bins:
+      self.q = sorted(self.q + [x])
+      return _quantile(self.q, self.p)
+    else:
+      # add datapoint
+      if x > self.q[-1]:
+        self.q[-1] = x
+      for i in range(1, self.bins):
+        self.n[i] += (self.q[i] >= x)
+      if x < self.q[0]:
+        self.q[0] = x
+      # interpolate if necessary
+      for i in range(1, self.bins - 1):
+        n_desired = i * self.n[-1] / (self.bins - 1)
+        d = n_desired - self.n[i]
+        if ((d >= 1) and ((self.n[i + 1] - self.n[i]) > 1)) or ((d <= -1) and ((self.n[i - 1] - self.n[i]) < -1)):
+          d = (d > 0) - (d < 0)
+          q_desired = self.q[i] + d / (self.n[i + 1] - self.n[i - 1]) * (
+              (self.n[i] - self.n[i - 1] + d) * (self.q[i + 1] - self.q[i]) / (self.n[i + 1] - self.n[i]) +
+              (self.n[i + 1] - self.n[i] - d) * (self.q[i] - self.q[i - 1]) / (self.n[i] - self.n[i - 1]))
+          if (self.q[i - 1] < q_desired < self.q[i + 1]):
+            self.q[i] = q_desired
+          else:
+            self.q[i] = self.q[i] + d * (self.q[i + d] - self.q[i]) / (self.n[i + d] - self.n[i])
+          self.n[i] = self.n[i] + d
+      return _quantile(self.q, self.p)
 
 def pQuantile(X: list[float], p: float) -> float:
-  # return an estimated p-quantile of X in O(n) via P-Square algorithm
-  q = sorted(X[:5])
-  if len(X) <= 5:
-    return q[round(p * len(X))]
-  n = [i for i in range(5)]
-  n_desired = [0, 2 * p, 4 * p, 2 + 2 * p, 4]
-  d_n_desired = [0, p / 2, p, (1 + p) / 2, 1]
-  for x in X[5:]:
-    # add datapoint
-    for i in range(1, 4):
-      n[i] += (q[i] >= x)
-    n[-1] += 1
-    if x < q[0]:
-      q[0] = x
-    if x > q[-1]:
-      q[-1] = x
-    for i in range(5):
-      n_desired[i] += d_n_desired[i]
-    # interpolate if necessary
-    for i in range(1, 4):
-      d = n_desired[i] - n[i]
-      if ((d >= 1) and ((n[i + 1] - n[i]) > 1)) or ((d <= -1) and ((n[i - 1] - n[i]) < -1)):
-        d = (d > 0) - (d < 0)
-        q_desired = q[i] + d / (n[i + 1] - n[i - 1]) * ((n[i] - n[i - 1] + d) * (q[i + 1] - q[i]) / (n[i + 1] - n[i]) +
-                                                        (n[i + 1] - n[i] - d) * (q[i] - q[i - 1]) / (n[i] - n[i - 1]))
-        if (q[i - 1] < q_desired < q[i + 1]):
-          q[i] = q_desired
-        else:
-          q[i] = q[i] + d * (q[i + d] - q[i]) / (n[i + d] - n[i])
-        n[i] = n[i] + d
-  return q[2]
+  '''return an estimated p-quantile of X in O(n) via P-Squared algorithm'''
+  g = pSquare(p)
+  for x in X:
+    y = g.next(x)
+  return y
 
 def histogram(X: list[float], bins: int, **kwargs):
-  q = sorted(X[:bins + 1])
-  n = [i for i in range(bins + 1)]
-  for x in X[bins + 1:]:
-    # add datapoint
-    for i in range(1, bins):
-      n[i] += (q[i] >= x)
-    n[-1] += 1
-    if x < q[0]:
-      q[0] = x
-    if x > q[-1]:
-      q[-1] = x
-    # interpolate if necessary
-    for i in range(1, bins):
-      n_desired = i * n[-1] / (bins)
-      d = n_desired - n[i]
-      if ((d >= 1) and ((n[i + 1] - n[i]) > 1)) or ((d <= -1) and ((n[i - 1] - n[i]) < -1)):
-        d = (d > 0) - (d < 0)
-        q_desired = q[i] + d / (n[i + 1] - n[i - 1]) * ((n[i] - n[i - 1] + d) * (q[i + 1] - q[i]) / (n[i + 1] - n[i]) +
-                                                        (n[i + 1] - n[i] - d) * (q[i] - q[i - 1]) / (n[i] - n[i - 1]))
-        if (q[i - 1] < q_desired < q[i + 1]):
-          q[i] = q_desired
-        else:
-          q[i] = q[i] + d * (q[i + d] - q[i]) / (n[i + d] - n[i])
-        n[i] = n[i] + d
-  q = [(q[i] - q[0]) / (q[-1] - q[0]) for i in range(bins + 1)]
-  print(q)
-
-  import matplotlib.pyplot as plt
-  fig, ax = plt.subplots()
-  widths = [(q[i + 1] - q[i]) for i in range(bins)]
-  heights = [(n[i + 1] - n[i]) for i in range(bins)]
-  print(widths, heights)
-  do_pdf = False
-  for i in range(bins):
-    if do_pdf:
-      ax.add_patch(plt.Rectangle((n[i] / len(X), 0), widths[i], heights[i] / sum(heights)))
-      ax.set_ylim((0, heights[-1]))
-    else:
-      ax.add_patch(plt.Rectangle((n[i] / len(X), 0), .1 / bins, q[i]))
-      ax.set_ylim((0, 1))
-  ax.set(title='Histogram', xlabel='p-quantile', ylabel='y', **kwargs)
-  ax.grid()
-  plt.show()
+  g = pSquare(.5, bins + 1)
+  for x in X:
+    _ = g.next(x)
+  print(g.n)
+  print(g.q)
 
 # histograms? https://www.cs.wustl.edu/~jain/papers/ftp/psqr.pdf
 
 def mode(X: List[float]) -> float:
-  # return an estimated in-distribution mode of a sorted X in O(n)
+  '''return an estimated in-distribution mode of a sorted X in O(n)'''
   u = mean(X)
   A = LinkedList(X)
   for n in range(len(X) - 1, 0, -1):
-    # remove farthest neighbor relative to the mean
+    # remove farthest neighbor of the mean
     a, a_distance = A[0], abs(A[0] - u)
     b, b_distance = A[-1], abs(A[-1] - u)
     if a_distance >= b_distance:
@@ -182,129 +155,21 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
 if __name__ == '__main__':
   X = sorted([0, .24, .25, 1])
   print(mode(X), X)
-
+  
   phi = (1 + 5**.5) / 2
   X = sorted([(0.5 + i * 1 / phi) % 1 for i in range(6)])
   print(mode(X), X)
   print(mean(X), stdev(X, mean(X)))
-
+  
   #sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
   Z = [
       0.02, 0.15, 0.74, 0.83, 3.39, 22.37, 10.15, 15.43, 38.62, 15.92, 34.60, 10.28, 1.47, 0.40, 0.05, 11.39, 0.27,
       0.42, 0.09, 11.37
   ]
-  print(pQuantile(Z, 0.5)) # exact answer: 6.931
-
+  print(pQuantile(Z, 0.5)) # correct answer: 6.931, pSquared answer: 4.440634353260338, population median: 2.43
+  
   import numpy as np
   np.random.seed(19680801)
   x = np.random.normal(0, 1, 100000)
-  print(x)
-  #histogram(x.tolist(), 50)
-
-  test1 = [
-      (11.9, 99.2),
-      (6.25, 52.2),
-      (11.1, 93.5),
-      (13.4, 113),
-      (15.1, 125),
-      (11.9, 99.8),
-      (12.8, 108),
-      (13.6, 114),
-      (16.1, 135),
-      (15.5, 131),
-      (11.6, 97.3),
-      (12.2, 103),
-      (10.2, 86.0),
-      (15.2, 128),
-      (14.4, 121),
-      (12.9, 108),
-      (13.2, 111),
-      (15.0, 126),
-      (18.8, 157),
-      (17.5, 147),
-      (10.4, 86.7),
-      (12.8, 107),
-      (12.2, 103),
-      (12.8, 106),
-      (12.6, 107),
-      (12.9, 108),
-      (12.5, 104),
-      (12.4, 103),
-      (12.8, 107),
-      (12.5, 105),
-  ]
-  test2 = [
-      (4.88, 40.6),
-      (5.38, 45.2),
-      (2.62, 21.8),
-      (3.50, 29.6),
-      (4.50, 37.5),
-      (5.38, 45.3),
-      (4.50, 37.9),
-      (4.75, 39.9),
-      (2.62, 21.9),
-      (5.00, 42.2),
-      (4.38, 36.5),
-      (3.38, 28.4),
-      (5.00, 41.5),
-      (4.25, 35.9),
-      (4.38, 36.4),
-      (2.00, 16.9),
-      (4.00, 33.8),
-      (5.00, 41.7),
-      (4.12, 34.7),
-      (5.25, 43.8),
-      (5.12, 42.7),
-      (5.12, 43.2),
-      (2.50, 20.7),
-      (4.88, 41.4),
-      (4.62, 38.4),
-      (4.88, 41.0),
-      (4.88, 41.0),
-      (5.62, 47.1),
-      (3.38, 28.5),
-      (4.50, 37.6),
-  ]
-  test3 = [
-      (5.82, 48.8),
-      (5.74, 48.1),
-      (6.28, 52.7),
-      (6.13, 51.5),
-      (5.92, 49.6),
-      (6.14, 51.5),
-      (6.13, 51.4),
-      (6.11, 51.2),
-      (5.99, 50.1),
-      (6.04, 50.8),
-      (6.51, 54.5),
-      (6.15, 51.7),
-      (6.33, 53.0),
-      (6.22, 52.3),
-      (6.18, 51.7),
-      (6.18, 51.9),
-      (6.35, 53.3),
-      (6.16, 51.6),
-      (6.25, 52.5),
-      (6.14, 51.4),
-      (6.45, 54.0),
-      (6.35, 53.3),
-      (6.16, 51.8),
-      (5.91, 49.5),
-      (6.17, 51.8),
-      (5.42, 45.5),
-      (6.24, 52.2),
-      (6.26, 52.6),
-      (5.98, 50.2),
-      (6.01, 50.4),
-  ]
-
-  transfer = []
-  for test in [test1, test2]:
-    transfer.append([x[0] for x in test])
-
-  bandwidth = []
-  for test in [test1, test2]:
-    bandwidth.append([x[1] for x in test])
-
-  sortedplot(*bandwidth, title="bandwidth")
-  print
+  histogram(x.tolist(), 5)
+  print(len(x[x < -4.5]))
