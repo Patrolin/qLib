@@ -1,6 +1,8 @@
 from collections import deque as LinkedList, UserList
 from typing import *
 
+from matplotlib.pyplot import xlim
+
 # (sample mean, sample standard deviation)
 def mean(X: List[float]) -> float:
   '''return the population mean = sample mean of X in O(n)'''
@@ -77,52 +79,23 @@ def pQuantile(X: list[float], p: float) -> float:
     y = g.next(x)
   return y
 
-def histogram(X: list[float], bins: int, **kwargs):
+# visual analysis
+def equiprobable_histogram(X: list[float], bins: int, **kwargs):
   g = pSquare(.5, bins + 1)
   for x in X:
     _ = g.next(x)
-  print(g.n)
-  print(g.q)
-
-# histograms? https://www.cs.wustl.edu/~jain/papers/ftp/psqr.pdf
-
-def mode(X: List[float]) -> float:
-  '''return an estimated in-distribution mode of a sorted X in O(n)'''
-  u = mean(X)
-  A = LinkedList(X)
-  for n in range(len(X) - 1, 0, -1):
-    # remove farthest neighbor of the mean
-    a, a_distance = A[0], abs(A[0] - u)
-    b, b_distance = A[-1], abs(A[-1] - u)
-    if a_distance >= b_distance:
-      u -= (a - u) / n
-      A.popleft()
-    else:
-      u -= (b - u) / n
-      A.pop()
-  return A[0]
-  # d > 1
-  # https://stackoverflow.com/questions/59672100/how-to-find-farthest-neighbors-in-euclidean-space
-  # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.386.8193&rep=rep1&type=pdf
-  # https://en.wikipedia.org/wiki/Priority_queue
-  # https://en.wikipedia.org/wiki/R-tree
-  # https://en.wikipedia.org/wiki/Ball_tree
-
-def V(n: int, k: int, step: int = -1) -> int:
-  # return variations = (n choose k) * k! in O(k)
-  res = 1
-  for i in range(k):
-    res *= n
-    n += step
-  return res
-
-def P(n: int, step: int = -1) -> int:
-  # return permutations = n! in O(n)
-  return V(n, n, step)
-
-def C(n: int, k: int) -> int:
-  # return combinations = (n choose k) in O(k)
-  return V(n, k) // P(k)
+  import matplotlib.pyplot as plt
+  from matplotlib.patches import Rectangle
+  fig, ax = plt.subplots()
+  for i in range(bins):
+    x1 = g.q[i]
+    x2 = g.q[i + 1]
+    ax.add_patch(Rectangle((x1, 0), x2 - x1, 1 / bins, edgecolor='black'))
+  ax.set(xlim=(g.q[0], g.q[-1]),
+         title='Equiprobable histogram\n(normal distribution)',
+         xlabel='value',
+         ylabel='probability')
+  plt.show()
 
 class NamedList(UserList):
   def __init__(self, name: str, *args, **kwargs):
@@ -152,6 +125,46 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
   ax.legend(prop={'size': 12})
   plt.show()
 
+# NTP stuff
+def mode(X: List[float]) -> float:
+  '''return an estimated in-distribution mode of a sorted X in O(n)'''
+  u = mean(X)
+  A = LinkedList(X)
+  for n in range(len(X) - 1, 0, -1):
+    # remove farthest neighbor of the mean
+    a, a_distance = A[0], abs(A[0] - u)
+    b, b_distance = A[-1], abs(A[-1] - u)
+    if a_distance >= b_distance:
+      u -= (a - u) / n
+      A.popleft()
+    else:
+      u -= (b - u) / n
+      A.pop()
+  return A[0]
+  # d > 1
+  # https://stackoverflow.com/questions/59672100/how-to-find-farthest-neighbors-in-euclidean-space
+  # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.386.8193&rep=rep1&type=pdf
+  # https://en.wikipedia.org/wiki/Priority_queue
+  # https://en.wikipedia.org/wiki/R-tree
+  # https://en.wikipedia.org/wiki/Ball_tree
+
+# combinatorics
+def V(n: int, k: int, step: int = -1) -> int:
+  # return variations = (n choose k) * k! in O(k)
+  res = 1
+  for i in range(k):
+    res *= n
+    n += step
+  return res
+
+def P(n: int, step: int = -1) -> int:
+  # return permutations = n! in O(n)
+  return V(n, n, step)
+
+def C(n: int, k: int) -> int:
+  # return combinations = (n choose k) in O(k)
+  return V(n, k) // P(k)
+
 if __name__ == '__main__':
   X = sorted([0, .24, .25, 1])
   print(mode(X), X)
@@ -171,5 +184,5 @@ if __name__ == '__main__':
   import numpy as np
   np.random.seed(19680801)
   x = np.random.normal(0, 1, 100000)
-  histogram(x.tolist(), 5)
+  equiprobable_histogram(x.tolist(), 5)
   print(len(x[x < -4.5]))
