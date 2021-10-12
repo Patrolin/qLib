@@ -1,8 +1,6 @@
 from collections import deque as LinkedList, UserList
 from typing import *
 
-from matplotlib.pyplot import xlim
-
 # (sample mean, sample standard deviation)
 def mean(X: List[float]) -> float:
   '''return the population mean = sample mean of X in O(n)'''
@@ -91,9 +89,10 @@ def equiprobable_histogram(X: list[float], bins: int, **kwargs):
     x1 = g.q[i]
     x2 = g.q[i + 1]
     ax.add_patch(Rectangle((x1, 0), x2 - x1, 1 / bins, edgecolor='black'))
+  # todo: use kwargs
   ax.set(xlim=(g.q[0], g.q[-1]),
          title='Equiprobable histogram\n(normal distribution)',
-         xlabel='value',
+         xlabel='x',
          ylabel='probability')
   plt.show()
 
@@ -150,7 +149,7 @@ def mode(X: List[float]) -> float:
 
 # combinatorics
 def V(n: int, k: int, step: int = -1) -> int:
-  # return variations = (n choose k) * k! in O(k)
+  '''return variations = (n choose k) * k! in O(k)'''
   res = 1
   for i in range(k):
     res *= n
@@ -158,11 +157,11 @@ def V(n: int, k: int, step: int = -1) -> int:
   return res
 
 def P(n: int, step: int = -1) -> int:
-  # return permutations = n! in O(n)
+  '''return permutations = n! in O(n)'''
   return V(n, n, step)
 
 def C(n: int, k: int) -> int:
-  # return combinations = (n choose k) in O(k)
+  '''return combinations = (n choose k) in O(k)'''
   return V(n, k) // P(k)
 
 if __name__ == '__main__':
