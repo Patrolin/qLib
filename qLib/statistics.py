@@ -103,6 +103,7 @@ class NamedList(UserList):
 
 def sortedplot(*Y: Union[NamedList, list], **kwargs):
   '''plot the Y as a sorted plot in O(n log n)'''
+  
   import matplotlib.pyplot as plt
   LINESTYLES = [
       (0, (3, 2, 3, 2, 3, 4)), # --- ---
@@ -114,12 +115,24 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
   fig, ax = plt.subplots()
   Y_named = [NamedList(y.name if isinstance(y, NamedList) else f'{i}', y) for i, y in enumerate(Y)]
   Y_named = sorted(Y_named, key=lambda y: mean(y.data))
+  
   X = None
   for i, y in enumerate(Y_named):
     X = [j / (len(y) - 1) for j in range(len(y))]
     ax.plot(X, sorted(y), linestyle=LINESTYLES[i % len(LINESTYLES)], linewidth=1.8, label=y.name)
-  if 'title' not in kwargs: kwargs['title'] = 'Sorted plot'
-  ax.set(xlabel='p-quantile', xticks=[0.05, 0.95], ylabel='y', **kwargs)
+  
+  p05 = [_quantile(sorted(y.data), 0.05) for y in Y_named]
+  p95 = [_quantile(sorted(y.data), 0.95) for y in Y_named]
+  kwargs_default = {
+      'title': 'Sorted plot',
+      'xlabel': 'p-quantile',
+      'ylabel': 'y',
+      'xticks': [0.05, 0.95],
+      'ylim': (min(p05), max(p95)),
+  }
+  for k, v in kwargs_default.items():
+    if k not in kwargs: kwargs[k] = v
+  ax.set(**kwargs)
   ax.grid()
   ax.legend(prop={'size': 12})
   plt.show()
@@ -183,5 +196,28 @@ if __name__ == '__main__':
   import numpy as np
   np.random.seed(19680801)
   x = np.random.normal(0, 1, 100000)
-  equiprobable_histogram(x.tolist(), 5)
-  print(len(x[x < -4.5]))
+  
+  #equiprobable_histogram(x.tolist(), 5)
+  
+  def sign(x: float) -> float:
+    return (x > 0) - (x < 0)
+  
+  class FractalRand:
+    def __init__(self, seed: float):
+      self.x = seed
+    
+    def next(self) -> float:
+      self.x = (self.x**2 + 1)**2 / (4 * self.x * (self.x**2 - 1))
+      y = self.x - sign(self.x)
+      import math
+      return y #/ (y + 1)
+  
+  r = FractalRand(2)
+  X = []
+  for i in range(100000):
+    X.append(r.next())
+  U = np.random.uniform(0, 1, 100000).tolist()
+  N = np.random.normal(0.5, 1 / 4, 100000).tolist()
+  E = np.random.exponential(100, 100000).tolist()
+  sortedplot(NamedList('fractal_rand() [not normalized]', X), NamedList('uniform distribution', U),
+             NamedList('normal distribution', N), NamedList('exponential distribution', E))
