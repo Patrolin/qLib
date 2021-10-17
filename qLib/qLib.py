@@ -65,7 +65,7 @@ quartertau = halftau / 2 # 1.5707963267948966
 print(e, tau, halftau, quartertau)
 
 def deg(radians: float) -> float:
-  return rad * 360 / tau
+  return radians * 360 / tau
 
 def rad(degrees: float) -> float:
   return degrees * tau / 360
@@ -105,13 +105,3 @@ def qerp(x, x1, x2, x3, y1, y2, y3):
 #     (-1, 1) https://en.wikipedia.org/wiki/Tanh-sinh_quadrature
 #     (-1, 1) https://en.wikipedia.org/wiki/Gauss–Jacobi_quadrature
 #     (-1, 1) https://en.wikipedia.org/wiki/Chebyshev–Gauss_quadrature
-
-def gamma(x):
-  x -= 1
-  #return (1 + 1 / (12 * x) + 1 / (288 * x**2) - 139 / (51840 * x**3)) * (x**x * (math.tau * x)**.5) / math.e**x
-  return (x**2 + 1 / 24 * x + 293 / 8640) / (x**2 - 1 / 24 * x + 293 / 8640) * (math.tau * x)**.5 * (x / math.e)**x
-
-def beta(x):
-  pass
-
-#print(gamma(0), gamma(2), gamma(3), gamma(4), gamma(5), gamma(6), gamma(13))

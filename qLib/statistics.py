@@ -162,7 +162,15 @@ def mode(X: List[float]) -> float:
   # https://en.wikipedia.org/wiki/Ball_tree
 
 # combinatorics
-def V(n: int, k: int, step: int = -1) -> int:
+@overload
+def V(n: int, k: int, step: int) -> int:
+  ...
+
+@overload
+def V(n: int | float, k: int, step: int | float) -> float:
+  ...
+
+def V(n: int | float, k: int, step: int | float = -1):
   '''return variations = (n choose k) * k! in O(k)'''
   res = 1
   for i in range(k):
@@ -170,13 +178,16 @@ def V(n: int, k: int, step: int = -1) -> int:
     n += step
   return res
 
-def P(n: int, step: int = -1) -> int:
-  '''return permutations = n! in O(n)'''
-  return V(n, n, step)
+def P(n: int | float) -> float:
+  '''return permutations = n! in O(log n)'''
+  return Gamma(n + 1)
 
-def C(n: int, k: int) -> int:
+def C(n: int, k: int):
   '''return combinations = (n choose k) in O(k)'''
-  return V(n, k) // P(k)
+  if isinstance(n, int) and isinstance(k, int):
+    return V(n, k) // P(k)
+  else:
+    return V(n, k) / P(k)
 
 if __name__ == '__main__':
   X = sorted([0, .24, .25, 1])
@@ -194,12 +205,6 @@ if __name__ == '__main__':
   ]
   print(pQuantile(Z, 0.5)) # correct answer: 6.931, pSquared answer: 4.440634353260338, population median: 2.43
   
-  import numpy as np
-  np.random.seed(19680801)
-  x = np.random.normal(0, 1, 100000)
-  
-  #equiprobable_histogram(x.tolist(), 5)
-  
   def sign(x: float) -> float:
     return (x > 0) - (x < 0)
   
@@ -214,11 +219,8 @@ if __name__ == '__main__':
       return y #/ (y + 1)
   
   r = FractalRand(2)
+  
   X = []
   for i in range(100000):
     X.append(r.next())
-  U = np.random.uniform(0, 1, 100000).tolist()
-  N = np.random.normal(0.5, 1 / 4, 100000).tolist()
-  E = np.random.exponential(100, 100000).tolist()
-  sortedplot(NamedList('fractal_rand() [not normalized]', X), NamedList('uniform distribution', U),
-             NamedList('normal distribution', N), NamedList('exponential distribution', E))
+  sortedplot(NamedList('fractal_rand() [not normalized]', X))

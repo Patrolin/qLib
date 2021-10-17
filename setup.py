@@ -6,10 +6,8 @@ setup(
   author='Patrolin',
   author_email='patrik@balas.cz',
   packages=['qLib', 'qLib.statistics'],
-  # scripts=['bin/script1','bin/script2'], # wat
   url='http://pypi.python.org/pypi/qLib',
   license='LICENSE.md',
   description='A library of tradeoffs',
   long_description=open('README.md').read(),
-  # install_requires=["Django >= 1.1.1", "pytest"],
 )
