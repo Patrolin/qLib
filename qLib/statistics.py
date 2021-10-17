@@ -61,8 +61,8 @@ class pSquare:
         if ((d >= 1) and ((self.n[i + 1] - self.n[i]) > 1)) or ((d <= -1) and ((self.n[i - 1] - self.n[i]) < -1)):
           d = (d > 0) - (d < 0)
           q_desired = self.q[i] + d / (self.n[i + 1] - self.n[i - 1]) * (
-              (self.n[i] - self.n[i - 1] + d) * (self.q[i + 1] - self.q[i]) / (self.n[i + 1] - self.n[i]) +
-              (self.n[i + 1] - self.n[i] - d) * (self.q[i] - self.q[i - 1]) / (self.n[i] - self.n[i - 1]))
+            (self.n[i] - self.n[i - 1] + d) * (self.q[i + 1] - self.q[i]) / (self.n[i + 1] - self.n[i]) +
+            (self.n[i + 1] - self.n[i] - d) * (self.q[i] - self.q[i - 1]) / (self.n[i] - self.n[i - 1]))
           if (self.q[i - 1] < q_desired < self.q[i + 1]):
             self.q[i] = q_desired
           else:
@@ -70,9 +70,10 @@ class pSquare:
           self.n[i] = self.n[i] + d
       return _quantile(self.q, self.p)
 
-def pQuantile(X: list[float], p: float) -> float:
+def pQuantile(X: list[float], p: float) -> Optional[float]:
   '''return an estimated p-quantile of X in O(n) via P-Squared algorithm'''
   g = pSquare(p)
+  y = None
   for x in X:
     y = g.next(x)
   return y
@@ -106,11 +107,11 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
   
   import matplotlib.pyplot as plt
   LINESTYLES = [
-      (0, (3, 2, 3, 2, 3, 4)), # --- ---
-      (0, (1, 1, 1, 1, 1, 3)), # *** ***
-      (0, (3, 2, 1, 2, 3, 4)), # -*- -*-
-      (0, (1, 2, 1, 2, 3, 4)), # **- **-
-      (0, (1, 2, 3, 2, 1, 4)), # *-* *-*
+    (0, (3, 2, 3, 2, 3, 4)), # --- ---
+    (0, (1, 1, 1, 1, 1, 3)), # *** ***
+    (0, (3, 2, 1, 2, 3, 4)), # -*- -*-
+    (0, (1, 2, 1, 2, 3, 4)), # **- **-
+    (0, (1, 2, 3, 2, 1, 4)), # *-* *-*
   ]
   fig, ax = plt.subplots()
   Y_named = [NamedList(y.name if isinstance(y, NamedList) else f'{i}', y) for i, y in enumerate(Y)]
@@ -124,11 +125,11 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
   p05 = [_quantile(sorted(y.data), 0.05) for y in Y_named]
   p95 = [_quantile(sorted(y.data), 0.95) for y in Y_named]
   kwargs_default = {
-      'title': 'Sorted plot',
-      'xlabel': 'p-quantile',
-      'ylabel': 'y',
-      'xticks': [0.05, 0.95],
-      'ylim': (min(p05), max(p95)),
+    'title': 'Sorted plot',
+    'xlabel': 'p-quantile',
+    'ylabel': 'y',
+    'xticks': [0.05, 0.95],
+    'ylim': (min(p05), max(p95)),
   }
   for k, v in kwargs_default.items():
     if k not in kwargs: kwargs[k] = v
@@ -188,8 +189,8 @@ if __name__ == '__main__':
   
   #sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
   Z = [
-      0.02, 0.15, 0.74, 0.83, 3.39, 22.37, 10.15, 15.43, 38.62, 15.92, 34.60, 10.28, 1.47, 0.40, 0.05, 11.39, 0.27,
-      0.42, 0.09, 11.37
+    0.02, 0.15, 0.74, 0.83, 3.39, 22.37, 10.15, 15.43, 38.62, 15.92, 34.60, 10.28, 1.47, 0.40, 0.05, 11.39, 0.27, 0.42,
+    0.09, 11.37
   ]
   print(pQuantile(Z, 0.5)) # correct answer: 6.931, pSquared answer: 4.440634353260338, population median: 2.43
   
