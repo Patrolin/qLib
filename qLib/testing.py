@@ -1,6 +1,6 @@
 from typing import *
-import sys
-import traceback
+from sys import exc_info
+from traceback import format_exception
 from contextlib import redirect_stdout
 
 __all__ = ['test', 'tests_summary', 'tests_passed', 'tests_failed']
@@ -11,11 +11,11 @@ NO_COLOR = '\033[0m'
 _tests_passed = 0
 _tests_failed = 0
 
-def tests_failed() -> int:
-  return _tests_failed
-
 def tests_passed() -> int:
   return _tests_passed
+
+def tests_failed() -> int:
+  return _tests_failed
 
 @overload
 def test(*conditions: bool) -> None:
@@ -60,12 +60,11 @@ def test(*_args):
     with redirect_stdout(None):
       pass
       try:
-        sys.stdout = None
         value = f(*args, **kwargs)
         passed = (value == expected_value)
       except BaseException as e:
         value = e
-        exception_info = sys.exc_info()
+        exception_info = exc_info()
         passed = isinstance(expected_value, type) and isinstance(value, expected_value)
     _tests_passed = _tests_passed_old
     _tests_failed = _tests_failed_old
@@ -86,7 +85,7 @@ def test(*_args):
     print(f'  value = {_repr(value)}')
     print(f'  expected_value = {_repr(expected_value)}')
     if exception_info:
-      print(f'{RED_COLOR}{"".join(traceback.format_exception(*exception_info)[1:-1])}{NO_COLOR}', end='')
+      print(f'{RED_COLOR}{"".join(format_exception(*exception_info)[1:-1])}{NO_COLOR}', end='')
   return passed
 
 def _repr(obj: object) -> str:
@@ -97,6 +96,5 @@ def _repr(obj: object) -> str:
   return repr(obj)
 
 def tests_summary():
-  global failed_count, test_count
   print(f'{_tests_passed + _tests_failed} tests:')
   print(f'  {_tests_passed} passed {_tests_failed} failed')
