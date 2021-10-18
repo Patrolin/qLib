@@ -2,10 +2,10 @@ from setuptools import setup
 
 setup(
   name='qLib',
-  version='0.0',
+  version='0.0a',
   author='Patrolin',
   author_email='patrik@balas.cz',
-  packages=['qLib', 'qLib.statistics'],
+  packages=['qLib'],
   url='http://pypi.python.org/pypi/qLib',
   license='LICENSE.md',
   description='A library of tradeoffs',

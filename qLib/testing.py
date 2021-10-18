@@ -1,101 +1,103 @@
-from types import LambdaType
 from typing import *
 import sys
 import traceback
-import inspect
+from contextlib import redirect_stdout
+
+__all__ = ['test', 'tests_conclude', 'tests_passed', 'tests_failed']
 
 RED_COLOR = '\033[0;31m'
 NO_COLOR = '\033[0m'
 
-test_count = 0
-passed_count = 0
+_tests_passed = 0
+_tests_failed = 0
 
-def test(faw: Union[bool, Tuple[Callable], Tuple[Callable, list], Tuple[Callable, list, dict]], expectedValue):
-  global test_count, passed_count
-  faw = cast(Union[Tuple[Callable], Tuple[Callable, list], Tuple[Callable, list, dict]], faw)
-  if not (1 <= len(faw) <= 3): raise TypeError('faw must have len(faw) in [1, 3]')
-  if len(faw) == 1:
-    faw = cast(Tuple[Callable], faw)
-    f, args, kwargs = faw[0], cast(List, []), cast(dict, dict())
-  elif len(faw) == 2:
-    faw = cast(Tuple[Callable, list], faw)
-    f, args, kwargs = faw[0], faw[1], cast(dict, dict())
-  else:
-    faw = cast(Tuple[Callable, list, dict], faw)
-    f, args, kwargs = faw[0], faw[1], faw[2]
-  
+def tests_failed() -> int:
+  return _tests_failed
+
+def tests_passed() -> int:
+  return _tests_passed
+
+@overload
+def test(*conditions: bool) -> None:
+  ...
+
+@overload
+def test(expected_value: Any, f: Callable) -> None:
+  ...
+
+@overload
+def test(expected_value: Any, f: Callable, args: list[Any]) -> None:
+  ...
+
+@overload
+def test(expected_value: Any, f: Callable, args: list[Any], kwargs: dict[str, Any]) -> None:
+  ...
+
+def test(*_args):
+  global _tests_passed, _tests_failed
   passed = None
   value = None
-  exception = None
+  failed_msg = None
   exception_info = None
-  test_count_old = test_count
-  passed_count_old = passed_count
-  try:
-    value = f(*args, **kwargs)
-    passed = (value == expectedValue)
-  except BaseException as e:
-    exception = e
-    exception_info = sys.exc_info()
-    passed = isinstance(expectedValue, type) and isinstance(exception, expectedValue)
-  finally:
-    test_count = test_count_old
-    passed_count = passed_count_old
-  
-  test_count += 1
-  if passed:
-    passed_count += 1
+
+  if len(_args) >= 1 and all(isinstance(x, bool) for x in _args):
+    value = _args
+
+    expected_value = (True, ) * len(value)
+    passed = (value == expected_value)
+    failed_msg = f'#{_tests_passed + _tests_failed + 1} failed:'
+  elif len(_args) >= 2 and \
+      isinstance(_args[1], Callable) and \
+      (len(_args) < 3 or isinstance(_args[2], list)) and \
+      (len(_args) < 4 or isinstance(_args[3], dict)):
+    expected_value = _args[0]
+    f: Callable = _args[1]
+    args: list[Any] = _args[2] if (len(_args) >= 3) else []
+    kwargs: dict = _args[3] if (len(_args) == 4) else dict()
+
+    _tests_passed_old = _tests_passed
+    _tests_failed_old = _tests_failed
+    with redirect_stdout(None):
+      pass
+      try:
+        sys.stdout = None
+        value = f(*args, **kwargs)
+        passed = (value == expected_value)
+      except BaseException as e:
+        value = e
+        exception_info = sys.exc_info()
+        passed = isinstance(expected_value, type) and isinstance(value, expected_value)
+    _tests_passed = _tests_passed_old
+    _tests_failed = _tests_failed_old
+
+    name_string = f.__name__
+    args_string = ', '.join(_repr(x) for x in args)
+    kwargs_string = (', ' if kwargs else '') + ', '.join(f'{_repr(key)}: {_repr(value)}'
+                                                         for (key, value) in kwargs.items())
+    failed_msg = f'#{_tests_passed + _tests_failed + 1} {name_string}({args_string}{kwargs_string}) failed:'
   else:
-    print(f'{_describe_test(f, args, kwargs)} failed:')
-    print(f'  value = {_repr(value or exception)}')
-    print(f'  expectedValue = {_repr(expectedValue)}')
+    raise TypeError()
+
+  if passed:
+    _tests_passed += 1
+  else:
+    _tests_failed += 1
+    print(failed_msg)
+    print(f'  value = {_repr(value)}')
+    print(f'  expected_value = {_repr(expected_value)}')
     if exception_info:
       print(f'{RED_COLOR}{"".join(traceback.format_exception(*exception_info)[1:-1])}{NO_COLOR}', end='')
+  return passed
 
-def _repr(x) -> str:
-  if not isinstance(x, type):
-    return repr(x)
-  else:
-    return x.__name__
+def _repr(obj: object) -> str:
+  if isinstance(obj, list):
+    return f'[{", ".join(_repr(x) for x in obj)}]'
+  if isinstance(obj, Callable):
+    return obj.__name__
+  return repr(obj)
 
-def _describe_test(f: Callable, args: list, kwargs: dict):
-  global test_count
-  name_string = f.__name__
-  args_string = ', '.join(_repr(x) for x in args)
-  kwargs_string = (', ' if kwargs else '') + ', '.join(f'{_repr(key)}: {_repr(value)}' for (key, value) in kwargs)
-  if isinstance(f, LambdaType):
-    return f'#{test_count} {inspect.getsource(f).strip()}'
-  else:
-    return f'#{test_count} {name_string}({args_string}{kwargs_string})'
-
-def test_stats() -> Tuple[int, int, int]:
-  global test_count, passed_count
-  failed_count = test_count - passed_count
-  return failed_count, passed_count, test_count
-
-def tests_done() -> int:
-  failed_count, passed_count, test_count = test_stats()
-  print(f'{test_count} tests:')
-  print(f'  {passed_count} passed {failed_count} failed')
-  tests_reset()
-  return failed_count
-
-def tests_reset():
-  global test_count, passed_count
-  test_count = 0
-  passed_count = 0
-
-def main():
-  global test_count
-  test((int, ), 0)
-  test((int, ['11']), 11)
-  test((int, ['wtf']), ValueError)
-  test((test, ), TypeError)
-  test((test, [[]]), TypeError)
-  
-  test((test, [[int], 0]), None)
-  test((lambda: test_count == 6, ), True)
-  test((lambda: test_count == 7, ), 1)
-
-if __name__ == '__main__':
-  main()
-  exit(tests_done())
+def tests_conclude() -> int:
+  global failed_count, test_count
+  print(f'{_tests_passed + _tests_failed} tests:')
+  print(f'  {_tests_passed} passed {_tests_failed} failed')
+  return _tests_failed
