@@ -3,7 +3,7 @@ import sys
 import traceback
 from contextlib import redirect_stdout
 
-__all__ = ['test', 'tests_conclude', 'tests_passed', 'tests_failed']
+__all__ = ['test', 'tests_summary', 'tests_passed', 'tests_failed']
 
 RED_COLOR = '\033[0;31m'
 NO_COLOR = '\033[0m'
@@ -96,8 +96,7 @@ def _repr(obj: object) -> str:
     return obj.__name__
   return repr(obj)
 
-def tests_conclude() -> int:
+def tests_summary():
   global failed_count, test_count
   print(f'{_tests_passed + _tests_failed} tests:')
   print(f'  {_tests_passed} passed {_tests_failed} failed')
-  return _tests_failed

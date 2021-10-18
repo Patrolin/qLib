@@ -27,4 +27,6 @@ if __name__ == '__main__':
 
   test(tests_passed() == 14, tests_failed() == 1)
 
+  tests_summary()
+
   exit(tests_failed() - 1)
