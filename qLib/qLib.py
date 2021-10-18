@@ -6,7 +6,7 @@ from typing import *
 
 # bitwise (|, &, copysign)
 
-def isqrt(x: float) -> float:
+def isqrt(x: float) -> None:
   pass
 
 # floor, round, ceil, abs, trunc, modf
@@ -22,11 +22,11 @@ epsilon = 1e-6
 def sign(x: float) -> int:
   return (x > 0) - (x < 0)
 
-def bisection_solve(a: float, b: float, f: Callable[float, float]) -> float:
+def bisection_solve(a: float, b: float, f: Callable[[float], float]) -> float:
   # find a root x of f(x) on [min(a,b), max(a,b)] if sign(f(a)) != sign(f(b))
   sa = sign(f(a))
   if sa == sign(f(b)):
-    return ValueError("sign(f(a)) == sign(f(b))")
+    raise ValueError("sign(f(a)) == sign(f(b))")
   while True:
     # shrink the interval towards some root
     x = (a + b) / 2
