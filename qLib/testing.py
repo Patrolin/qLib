@@ -1,4 +1,4 @@
-from typing import *
+from typing import Any, Callable, overload
 from sys import exc_info
 from traceback import format_exception
 from contextlib import redirect_stdout
@@ -26,11 +26,11 @@ def test(expected_value: Any, f: Callable) -> None:
   ...
 
 @overload
-def test(expected_value: Any, f: Callable, args: list[Any]) -> None:
+def test(expected_value: Any, f: Callable, args: list) -> None:
   ...
 
 @overload
-def test(expected_value: Any, f: Callable, args: list[Any], kwargs: dict[str, Any]) -> None:
+def test(expected_value: Any, f: Callable, args: list, kwargs: dict[str, Any]) -> None:
   ...
 
 def test(*_args):

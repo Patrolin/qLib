@@ -23,19 +23,19 @@ class Polynomial(UserList):
     # return P(x) and d/dx P(x) via Horner's method
     n = len(self.data)
     A = [[0.0] * n] * 2
-    
+
     # P(x)
     A[0][n - 1] = self[n - 1]
     for i in range(n - 2, -1, -1):
       A[0][i] = self[i] + A[0][i + 1] * x
-    
+
     # d/dx P(x)
     A[1][n - 1] = A[0][n - 1]
     for i in range(n - 2, 0, -1):
       A[1][i] = A[0][i] + A[1][i + 1] * x # type: ignore
-    
+
     return A[0][0], A[1][1]
-  
+
   def roots(self):
     W = Polynomial(self.data)
     X = [0.0] * (len(W) - 1)
@@ -110,5 +110,5 @@ class Legendre(Polynomial):
 # int from -inf to inf of 1 / (1 + x**2) = pi
 # int from -inf to inf of (sin x) / x = pi
 
-def integrate(f: Callable[[float], float], a: float, b: float) -> float:
+def integrate(f: Callable[[float], float], a: float, b: float) -> None:
   pass

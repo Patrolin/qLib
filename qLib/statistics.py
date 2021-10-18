@@ -1,15 +1,16 @@
-from collections import deque as LinkedList, UserList
 from typing import *
+from collections import deque as LinkedList, UserList
+from .math import *
 
 # (sample mean, sample standard deviation)
-def mean(X: List[float]) -> float:
+def mean(X: list[int | float]) -> float:
   '''return the population mean = sample mean of X in O(n)'''
   acc = 0.0
   for x in X:
     acc += x
   return acc / len(X)
 
-def stdev(X: List[float], u: float) -> float:
+def stdev(X: list[int | float], u: float) -> float:
   '''return the sample standard deviation of X given the mean u in O(n)'''
   acc = 0.0
   for x in X:
@@ -21,7 +22,7 @@ class EMA:
   def __init__(self, a=0.1):
     self.x_old = 0.0
     self.a = a
-  
+
   def next(self, x: float) -> float:
     '''return the next EMA step in O(1)'''
     self.x_old = self.a * x + (1 - self.a) * self.x_old
@@ -40,7 +41,7 @@ class pSquare:
     self.bins = bins
     self.q: list[float] = []
     self.n = [i for i in range(self.bins)]
-  
+
   def next(self, x: float) -> float:
     '''return the next P-Squared step in O(1)'''
     if len(self.q) < self.bins:
@@ -104,7 +105,7 @@ class NamedList(UserList):
 
 def sortedplot(*Y: Union[NamedList, list], **kwargs):
   '''plot the Y as a sorted plot in O(n log n)'''
-  
+
   import matplotlib.pyplot as plt
   LINESTYLES = [
     (0, (3, 2, 3, 2, 3, 4)), # --- ---
@@ -116,12 +117,12 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
   fig, ax = plt.subplots()
   Y_named = [NamedList(y.name if isinstance(y, NamedList) else f'{i}', y) for i, y in enumerate(Y)]
   Y_named = sorted(Y_named, key=lambda y: mean(y.data))
-  
+
   X = None
   for i, y in enumerate(Y_named):
     X = [j / (len(y) - 1) for j in range(len(y))]
     ax.plot(X, sorted(y), linestyle=LINESTYLES[i % len(LINESTYLES)], linewidth=1.8, label=y.name)
-  
+
   p05 = [_quantile(sorted(y.data), 0.05) for y in Y_named]
   p95 = [_quantile(sorted(y.data), 0.95) for y in Y_named]
   kwargs_default = {
@@ -139,7 +140,7 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
   plt.show()
 
 # NTP stuff
-def mode(X: List[float]) -> float:
+def mode(X: list[int | float]) -> float:
   '''return an estimated in-distribution mode of a sorted X in O(n)'''
   u = mean(X)
   A = LinkedList(X)
@@ -192,34 +193,34 @@ def C(n: int, k: int):
 if __name__ == '__main__':
   X = sorted([0, .24, .25, 1])
   print(mode(X), X)
-  
+
   phi = (1 + 5**.5) / 2
   X = sorted([(0.5 + i * 1 / phi) % 1 for i in range(6)])
   print(mode(X), X)
   print(mean(X), stdev(X, mean(X)))
-  
+
   #sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
   Z = [
     0.02, 0.15, 0.74, 0.83, 3.39, 22.37, 10.15, 15.43, 38.62, 15.92, 34.60, 10.28, 1.47, 0.40, 0.05, 11.39, 0.27, 0.42,
     0.09, 11.37
   ]
   print(pQuantile(Z, 0.5)) # correct answer: 6.931, pSquared answer: 4.440634353260338, population median: 2.43
-  
+
   def sign(x: float) -> float:
     return (x > 0) - (x < 0)
-  
+
   class FractalRand:
     def __init__(self, seed: float):
       self.x = seed
-    
+
     def next(self) -> float:
       self.x = (self.x**2 + 1)**2 / (4 * self.x * (self.x**2 - 1))
       y = self.x - sign(self.x)
       import math
       return y #/ (y + 1)
-  
+
   r = FractalRand(2)
-  
+
   X = []
   for i in range(100000):
     X.append(r.next())

@@ -1,4 +1,3 @@
-from typing import Type
 from qLib import *
 from contextlib import redirect_stdout
 
