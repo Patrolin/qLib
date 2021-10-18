@@ -164,31 +164,50 @@ def mode(X: list[int | float]) -> float:
 
 # combinatorics
 @overload
-def V(n: int, k: int, step: int) -> int:
+def V(n: int, k: int) -> int:
   ...
 
 @overload
-def V(n: int | float, k: int, step: int | float) -> float:
+def V(n: int | float, k: int | float) -> float:
   ...
 
-def V(n: int | float, k: int, step: int | float = -1):
+# todo: step?
+def V(n: int | float, k: int | float) -> int | float:
   '''return variations = (n choose k) * k! in O(k)'''
-  res = 1
-  for i in range(k):
-    res *= n
-    n += step
-  return res
+  if isinstance(n, int) and isinstance(k, int):
+    return P(n)**2 // (P(k) * P(n - k))
+  else:
+    return P(n)**2 / (P(k) * P(n - k))
 
-def P(n: int | float) -> float:
+@overload
+def P(n: int) -> int:
+  ...
+
+@overload
+def P(n: float) -> float:
+  ...
+
+def P(n: int | float):
   '''return permutations = n! in O(log n)'''
-  return Gamma(n + 1)
+  if isinstance(n, int):
+    return round(Gamma(n + 1))
+  else:
+    return Gamma(n + 1)
 
-def C(n: int, k: int):
+@overload
+def C(n: int, k: int) -> int:
+  ...
+
+@overload
+def C(n: int | float, k: int | float) -> float:
+  ...
+
+def C(n: float, k: float) -> float:
   '''return combinations = (n choose k) in O(k)'''
   if isinstance(n, int) and isinstance(k, int):
-    return V(n, k) // P(k)
+    return P(n) // (P(k) * P(n - k))
   else:
-    return V(n, k) / P(k)
+    return P(n) / (P(k) * P(n - k))
 
 if __name__ == '__main__':
   X = sorted([0, .24, .25, 1])
