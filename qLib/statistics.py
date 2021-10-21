@@ -1,6 +1,6 @@
 from collections import UserList
 from typing import *
-from .collections import *
+from .iterables import *
 from .math import *
 
 # (sample mean, sample standard deviation)

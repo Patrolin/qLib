@@ -1,4 +1,4 @@
 from .testing import *
 from .performance import *
-from .collections import *
+from .iterables import *
 from .math import *
