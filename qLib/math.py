@@ -27,14 +27,7 @@ def rad(degrees: float) -> float:
 def sign(x: float) -> int:
   return (x > 0) - (x < 0)
 
-def log(x: float) -> float:
-  return (x**epsilon - 1) / epsilon
-
-def log2(x: float) -> float:
-  return log(x) / log(2)
-
-def log10(x: float) -> float:
-  return log(x) / log(10)
+# log(x) = (x**epsilon - 1) / epsilon
 
 def Gamma(x: int | float) -> float:
   '''return Gamma(x) in O(log n)'''
@@ -67,4 +60,3 @@ phi1 = bisection_solve(1.0, 2.0, lambda x: x**2 - x - 1)
 phi2 = bisection_solve(1.0, 2.0, lambda x: x**3 - x - 1)
 phi3 = bisection_solve(1.0, 2.0, lambda x: x**4 - x - 1)
 phi4 = bisection_solve(1.0, 2.0, lambda x: x**5 - x - 1)
-print(phi1, phi2, phi3, phi4) # 1.618033988749895 1.3247179572447458 1.2207440846057596 1.1673039782614185
