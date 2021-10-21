@@ -1,5 +1,5 @@
 from typing import *
-from collections import deque as LinkedList, UserList
+from .collections import *
 from .math import *
 
 # (sample mean, sample standard deviation)
@@ -11,11 +11,34 @@ def mean(X: list[int | float]) -> float:
   return acc / len(X)
 
 def stdev(X: list[int | float], u: float) -> float:
-  '''return the sample standard deviation of X given the mean u in O(n)'''
+  '''return the sample standard deviation of X given the sample mean u in O(n)'''
   acc = 0.0
   for x in X:
     acc += (x - u)**2
   return (acc / (len(X) - 1))**0.5
+
+# NTP stuff
+def mode(X: list[int | float]) -> float:
+  '''return an estimated in-distribution mode of a sorted X in O(n)'''
+  u = mean(X)
+  A = LinkedList(X)
+  for n in range(len(X) - 1, 0, -1):
+    # remove farthest neighbor of the mean
+    a, a_distance = A[0], abs(A[0] - u)
+    b, b_distance = A[-1], abs(A[-1] - u)
+    if a_distance >= b_distance:
+      u -= (a - u) / n
+      A.popleft()
+    else:
+      u -= (b - u) / n
+      A.pop()
+  return A[0]
+  # d > 1
+  # https://stackoverflow.com/questions/59672100/how-to-find-farthest-neighbors-in-euclidean-space
+  # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.386.8193&rep=rep1&type=pdf
+  # https://en.wikipedia.org/wiki/Priority_queue
+  # https://en.wikipedia.org/wiki/R-tree
+  # https://en.wikipedia.org/wiki/Ball_tree
 
 # infinite streams
 class EMA:
@@ -138,29 +161,6 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
   ax.grid()
   ax.legend(prop={'size': 12})
   plt.show()
-
-# NTP stuff
-def mode(X: list[int | float]) -> float:
-  '''return an estimated in-distribution mode of a sorted X in O(n)'''
-  u = mean(X)
-  A = LinkedList(X)
-  for n in range(len(X) - 1, 0, -1):
-    # remove farthest neighbor of the mean
-    a, a_distance = A[0], abs(A[0] - u)
-    b, b_distance = A[-1], abs(A[-1] - u)
-    if a_distance >= b_distance:
-      u -= (a - u) / n
-      A.popleft()
-    else:
-      u -= (b - u) / n
-      A.pop()
-  return A[0]
-  # d > 1
-  # https://stackoverflow.com/questions/59672100/how-to-find-farthest-neighbors-in-euclidean-space
-  # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.386.8193&rep=rep1&type=pdf
-  # https://en.wikipedia.org/wiki/Priority_queue
-  # https://en.wikipedia.org/wiki/R-tree
-  # https://en.wikipedia.org/wiki/Ball_tree
 
 # combinatorics
 @overload
