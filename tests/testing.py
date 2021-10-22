@@ -21,9 +21,9 @@ if __name__ == '__main__':
 
   test(TypeError, test, [0, int, ['0'], 'wtf'])
   test(True)
+  test(tests_failed() + 1, fail_test)
   test(True, test, [True])
   test(False, test, [False])
-  test(tests_failed() + 1, fail_test)
 
   test(True, lambda: test({}, lambda: {}))
   test(True, lambda: test({}, lambda: {'a': 1}))
