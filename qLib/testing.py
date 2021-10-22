@@ -1,4 +1,4 @@
-from typing import Any, Callable, overload, cast
+from typing import Any, Callable, overload
 from sys import exc_info
 from traceback import format_exception
 from contextlib import redirect_stdout

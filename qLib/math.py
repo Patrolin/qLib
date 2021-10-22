@@ -97,5 +97,4 @@ phi3 = bisection_solve(1.0, 2.0, lambda x: x**4 - x - 1)
 phi4 = bisection_solve(1.0, 2.0, lambda x: x**5 - x - 1)
 
 f = lambda x: x**2 - x - 1
-x1 = nelder_mead_1D(lambda x: (f(x) if x >= 1 else x - 2)**2, 1.0, 1 + 2 * epsilon)
-print(x1, f(x1))
+phi1_mead = nelder_mead_1D(lambda x: (f(x) if x >= 1 else x - 2)**2, 1.0, 1 + 2 * epsilon)
