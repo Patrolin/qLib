@@ -93,7 +93,7 @@ def _is_superset(a: Any, b: Any) -> bool:
   if type(a) != type(b): return False
   if isinstance(a, list):
     if len(a) != len(b): return False
-    return all(_is_superset(a[k], b[k]) for k in b.keys())
+    return all(_is_superset(a[k], b[k]) for k in range(len(b)))
   elif isinstance(a, dict):
     return all((k in a) and _is_superset(a[k], b[k]) for k in b.keys())
   else:

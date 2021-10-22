@@ -25,7 +25,18 @@ if __name__ == '__main__':
   test(False, test, [False])
   test(tests_failed() + 1, fail_test)
 
-  test(tests_passed() == 15, tests_failed() == 0)
+  test(True, lambda: test({}, lambda: {}))
+  test(True, lambda: test({}, lambda: {'a': 1}))
+  test(False, lambda: test({}, lambda: {'a': 1}, exact=True))
+  test(False, lambda: test({'a': 1}, lambda: {}))
+  test(True, lambda: test({'a': 1}, lambda: {'a': 1}))
+
+  test(True, lambda: test([], lambda: []))
+  test(False, lambda: test([], lambda: [1]))
+  test(False, lambda: test([1], lambda: []))
+  test(True, lambda: test([1], lambda: [1]))
+
+  test(tests_passed() == 24, tests_failed() == 0)
 
   tests_summary()
 
