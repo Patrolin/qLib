@@ -1,4 +1,4 @@
-from typing import Any, Callable, overload
+from typing import Any, Callable, overload, cast
 from sys import exc_info
 from traceback import format_exception
 from contextlib import redirect_stdout
@@ -22,18 +22,18 @@ def test(*conditions: bool) -> None:
   ...
 
 @overload
-def test(expected_value: Any, f: Callable) -> None:
+def test(expected_value: Any, f: Callable[..., Any], exact: bool = False) -> None:
   ...
 
 @overload
-def test(expected_value: Any, f: Callable, args: list) -> None:
+def test(expected_value: Any, f: Callable[..., Any], args: list[Any], exact: bool = False) -> None:
   ...
 
 @overload
-def test(expected_value: Any, f: Callable, args: list, kwargs: dict[str, Any]) -> None:
+def test(expected_value: Any, f: Callable[..., Any], args: list[Any], kwargs: dict[str, Any], exact: bool = False) -> None:
   ...
 
-def test(*_args):
+def test(*_args, exact=False):
   global _tests_passed, _tests_failed
   passed = None
   value = None
@@ -61,18 +61,19 @@ def test(*_args):
       pass
       try:
         value = f(*args, **kwargs)
-        passed = (value == expected_value)
+        passed = (value == expected_value) if exact else _is_superset(value, expected_value)
       except BaseException as e:
         value = e
         exception_info = exc_info()
-        passed = isinstance(expected_value, type) and isinstance(value, expected_value)
+        passed = isinstance(expected_value, type) and ( \
+          (value.__class__ == expected_value) if exact else isinstance(value, expected_value)
+        )
     _tests_passed = _tests_passed_old
     _tests_failed = _tests_failed_old
 
     name_string = f.__name__
     args_string = ', '.join(_repr(x) for x in args)
-    kwargs_string = (', ' if kwargs else '') + ', '.join(f'{_repr(key)}: {_repr(value)}'
-                                                         for (key, value) in kwargs.items())
+    kwargs_string = (', ' if kwargs else '') + ', '.join(f'{_repr(key)}: {_repr(value)}' for (key, value) in kwargs.items())
     failed_msg = f'#{_tests_passed + _tests_failed + 1} {name_string}({args_string}{kwargs_string}) failed:'
   else:
     raise TypeError()
@@ -87,6 +88,16 @@ def test(*_args):
     if exception_info:
       print(f'{RED_COLOR}{"".join(format_exception(*exception_info)[1:-1])}{NO_COLOR}', end='')
   return passed
+
+def _is_superset(a: Any, b: Any) -> bool:
+  if type(a) != type(b): return False
+  if isinstance(a, list):
+    if len(a) != len(b): return False
+    return all(_is_superset(a[k], b[k]) for k in b.keys())
+  elif isinstance(a, dict):
+    return all((k in a) and _is_superset(a[k], b[k]) for k in b.keys())
+  else:
+    return a == b
 
 def _repr(obj: object) -> str:
   if isinstance(obj, list):
