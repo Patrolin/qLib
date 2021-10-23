@@ -1,101 +1,89 @@
 from typing import Any, Callable, overload
-from sys import exc_info
-from traceback import format_exception
-from contextlib import redirect_stdout
 
-__all__ = ['test', 'tests_summary', 'tests_passed', 'tests_failed']
+__all__ = ['test', 'zig_maybe', 'is_exact', 'is_superset', 'tests_summary', 'TestSuite', 'test_suites']
 
 RED_COLOR = '\033[0;31m'
 NO_COLOR = '\033[0m'
 
-_tests_passed = 0
-_tests_failed = 0
+class TestSuite:
+  def __init__(self, name: str):
+    self.name = name
+    self.passed = 0
+    self.failed = 0
 
-def tests_passed() -> int:
-  return _tests_passed
+  def __enter__(self):
+    _test_suites.append(self)
+    return self
 
-def tests_failed() -> int:
-  return _tests_failed
+  def __exit__(self, exc_type, exc_value, traceback):
+    if exc_value: raise exc_value
+    _test_suites.pop()
 
-@overload
-def test(*conditions: bool) -> None:
-  ...
+_test_suites = [TestSuite('')]
 
-@overload
-def test(expected_value: Any, f: Callable[..., Any], exact: bool = False) -> None:
-  ...
+def test_suites():
+  return _test_suites
 
-@overload
-def test(expected_value: Any, f: Callable[..., Any], args: list[Any], exact: bool = False) -> None:
-  ...
-
-@overload
-def test(expected_value: Any, f: Callable[..., Any], args: list[Any], kwargs: dict[str, Any], exact: bool = False) -> None:
-  ...
-
-def test(*_args, exact=False):
-  global _tests_passed, _tests_failed
-  passed = None
-  value = None
-  failed_msg = None
-  exception_info = None
-
-  if len(_args) >= 1 and all(isinstance(x, bool) for x in _args):
-    value = _args
-
-    expected_value = (True, ) * len(value)
-    passed = (value == expected_value)
-    failed_msg = f'#{_tests_passed + _tests_failed + 1} failed:'
-  elif len(_args) >= 2 and \
-      isinstance(_args[1], Callable) and \
-      (len(_args) < 3 or isinstance(_args[2], list)) and \
-      (len(_args) < 4 or isinstance(_args[3], dict)):
-    expected_value = _args[0]
-    f: Callable = _args[1]
-    args: list[Any] = _args[2] if (len(_args) >= 3) else []
-    kwargs: dict = _args[3] if (len(_args) == 4) else dict()
-
-    _tests_passed_old = _tests_passed
-    _tests_failed_old = _tests_failed
-    with redirect_stdout(None):
-      pass
-      try:
-        value = f(*args, **kwargs)
-        passed = (value == expected_value) if exact else _is_superset(value, expected_value)
-      except BaseException as e:
-        value = e
-        exception_info = exc_info()
-        passed = isinstance(expected_value, type) and ( \
-          (value.__class__ == expected_value) if exact else isinstance(value, expected_value)
-        )
-    _tests_passed = _tests_passed_old
-    _tests_failed = _tests_failed_old
-
-    name_string = f.__name__
-    args_string = ', '.join(_repr(x) for x in args)
-    kwargs_string = (', ' if kwargs else '') + ', '.join(f'{_repr(key)}: {_repr(value)}' for (key, value) in kwargs.items())
-    failed_msg = f'#{_tests_passed + _tests_failed + 1} {name_string}({args_string}{kwargs_string}) failed:'
-  else:
-    raise TypeError()
+def test(*conditions: bool, quiet: bool = False) -> bool:
+  value = conditions
+  expected_value = (True, ) * len(value)
+  passed = (value == expected_value)
 
   if passed:
-    _tests_passed += 1
+    for s in _test_suites[::-1]:
+      s.passed += 1
   else:
-    _tests_failed += 1
-    print(failed_msg)
-    print(f'  value = {_repr(value)}')
-    print(f'  expected_value = {_repr(expected_value)}')
-    if exception_info:
-      print(f'{RED_COLOR}{"".join(format_exception(*exception_info)[1:-1])}{NO_COLOR}', end='')
+    for s in _test_suites[::-1]:
+      s.failed += 1
+    root_test_suite = _test_suites[0]
+    tests_passed = root_test_suite.passed
+    tests_failed = root_test_suite.failed
+    if not quiet:
+      print(f'{".".join(s.name for s in _test_suites[1:])}#{tests_passed + tests_failed} failed:')
+      print(f'  value = {_repr(value)}')
+      print(f'  expected_value = {_repr(expected_value)}')
   return passed
 
-def _is_superset(a: Any, b: Any) -> bool:
+@overload
+def zig_maybe(f: Callable[..., Any]) -> Any | BaseException:
+  ...
+
+@overload
+def zig_maybe(f: Callable[..., Any], args: list[Any]) -> Any | BaseException:
+  ...
+
+@overload
+def zig_maybe(f: Callable[..., Any], args: list[Any], kwargs: dict[str, Any]) -> Any | BaseException:
+  ...
+
+def zig_maybe(*args):
+  if (len(args) > 3) \
+    and isinstance(args[0], Callable) \
+    and ((len(args) < 2) or isinstance(args[1], list)) \
+    and ((len(args) < 3) or isinstance(args[2], dict)):
+    raise TypeError()
+  f: Callable = args[0]
+  _args: list[Any] = args[1] if (len(args) >= 2) else []
+  kwargs: dict = args[2] if (len(args) == 3) else dict()
+  maybe_value = None
+  try:
+    maybe_value = f(*_args, **kwargs)
+  except BaseException as e:
+    maybe_value = e
+  return maybe_value
+
+def is_exact(a: Any, b: Any):
+  return (a.__class__ == b) or (a == b)
+
+def is_superset(a: Any, b: Any) -> bool:
+  if isinstance(b, type):
+    return isinstance(a, b) or (a == b)
   if type(a) != type(b): return False
   if isinstance(a, list):
     if len(a) != len(b): return False
-    return all(_is_superset(a[k], b[k]) for k in range(len(b)))
+    return all(is_superset(a[k], b[k]) for k in range(len(b)))
   elif isinstance(a, dict):
-    return all((k in a) and _is_superset(a[k], b[k]) for k in b.keys())
+    return all((k in a) and is_superset(a[k], b[k]) for k in b.keys())
   else:
     return a == b
 
@@ -107,5 +95,10 @@ def _repr(obj: object) -> str:
   return repr(obj)
 
 def tests_summary():
-  print(f'{_tests_passed + _tests_failed} tests:')
-  print(f'  {_tests_passed} passed {_tests_failed} failed')
+  last_test_suite = _test_suites[-1]
+  name = last_test_suite.name if len(_test_suites) > 1 else ''
+  tests_passed = last_test_suite.passed
+  tests_failed = last_test_suite.failed
+  NEWLINE = "\n"
+  print(f'{NEWLINE if last_test_suite.failed > 0 else ""}{(name+" ") if name else ""}{tests_passed + tests_failed} tests:')
+  print(f'  {tests_passed} passed {tests_failed} failed')
