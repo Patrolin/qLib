@@ -13,27 +13,22 @@ if __name__ == '__main__':
         s.passed += 1
         s.failed -= 1
   with TestSuite('int()'):
-    with TestSuite('is_exact()'):
-      test(is_exact(0, int()))
-      test(is_exact(11, int('11')))
-      test(is_exact(3, int('11', base=2)))
-    with TestSuite('is_superset()'):
-      test(is_superset(0, int()))
-      test(is_superset(11, int('11')))
-      test(is_superset(3, int('11', base=2)))
-  with TestSuite('zig_maybe()'):
-    with TestSuite('is_exact()'):
-      test(is_exact(zig_maybe(int), 0))
-      test(is_exact(zig_maybe(int, ['11']), 11))
-      test(is_exact(zig_maybe(int, ['11'], {'base': 2}), 3))
-      test(is_exact(zig_maybe(int, ['wtf']), ValueError))
-      test(not is_exact(zig_maybe(int, ['wtf']), BaseException))
-    with TestSuite('is_superset()'):
-      test(is_superset(zig_maybe(int), 0))
-      test(is_superset(zig_maybe(int, ['11']), 11))
-      test(is_superset(zig_maybe(int, ['11'], {'base': 2}), 3))
-      test(is_superset(zig_maybe(int, ['wtf']), ValueError))
-      test(is_superset(zig_maybe(int, ['wtf']), BaseException))
+    test(int() == 0)
+    test(int('11') == 11)
+    test(int('11', base=2) == 3)
+    with TestSuite('zig_maybe()'):
+      with TestSuite('is_exact()'):
+        test(is_exact(zig_maybe(int), 0))
+        test(is_exact(zig_maybe(int, ['11']), 11))
+        test(is_exact(zig_maybe(int, ['11'], {'base': 2}), 3))
+        test(is_exact(zig_maybe(int, ['wtf']), ValueError))
+        test(not is_exact(zig_maybe(int, ['wtf']), BaseException))
+      with TestSuite('is_superset()'):
+        test(is_superset(zig_maybe(int), 0))
+        test(is_superset(zig_maybe(int, ['11']), 11))
+        test(is_superset(zig_maybe(int, ['11'], {'base': 2}), 3))
+        test(is_superset(zig_maybe(int, ['wtf']), ValueError))
+        test(is_superset(zig_maybe(int, ['wtf']), BaseException))
   with TestSuite('list()'):
     with TestSuite('is_exact()'):
       test(is_exact([], []))
@@ -46,18 +41,18 @@ if __name__ == '__main__':
       test(not is_superset([1], []))
       test(not is_superset([], [1]))
   with TestSuite('dict()'):
-    with TestSuite('is_superset()'):
-      test(is_superset({}, {}))
-      test(is_superset({'a': 1}, {}))
-      test(is_superset({'a': 1}, {'a': 1}))
-      test(not is_superset({}, {'a': 1}))
     with TestSuite('is_exact()'):
       test(is_exact({}, {}))
       test(is_exact({'a': 1}, {'a': 1}))
       test(not is_exact({'a': 1}, {}))
       test(not is_exact({}, {'a': 1}))
+    with TestSuite('is_superset()'):
+      test(is_superset({}, {}))
+      test(is_superset({'a': 1}, {}))
+      test(is_superset({'a': 1}, {'a': 1}))
+      test(not is_superset({}, {'a': 1}))
   with s_test:
-    test(root_test_suite.passed == 38, root_test_suite.failed == 0)
+    test(root_test_suite.passed == 35, root_test_suite.failed == 0)
 
   tests_summary()
 
