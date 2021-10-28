@@ -4,8 +4,12 @@
 
 Dev tools:
 
-- vscode(python, pylance)
-- pip(yapf)
+- python 3.10
+- vscode
+  - python
+  - pylance
+- pip
+  - yapf
 
 ```json
 {

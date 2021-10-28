@@ -1,0 +1,38 @@
+
+[]TestSuites test_suites = [{name=""}]
+
+TestSuite {
+  uint passed = 0
+  uint failed = 0
+  str name
+
+  enter(){
+    test_suites.append(this)
+  }
+  exit(){
+    test_suites.pop()
+  }
+}
+
+bool test([]bool conditions){
+  [conditions.len]bool expectedValue
+  for i in 0..conditions.len{
+    expectedValue[i] = true
+  }
+
+  bool passed = (conditions == expectedValue)
+  if passed{
+    for s in test_suites{
+      s.passed += 1
+    }
+  } else{
+    for s in test_suites{
+      s.failed += 1
+    }
+    TestSuite last_s = test_suites[test_suites.len-1]
+    if !quiet{
+      print("%0#%1 failed:", [test_suites[1:].map(x => x.name).join('.'), last_s.passed + last_s.failed])
+      print("value = %0", conditions)
+    }
+  }
+}

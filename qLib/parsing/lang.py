@@ -5,8 +5,10 @@ u32 xorshift(u32 x){
   x = x xor x << 5
   return x
 }
+
 f32 PHI = 1.618
 f32 PHI2 = 1.3247
+
 struct QRNG{
   f32 x = 0.0
   f32 next(Rand self){
@@ -33,7 +35,13 @@ main(){
   else{
 
   }
-  switch sign(a-b) // TODO: switch is poorly defined
+  switch sign(a-b)
+    3..10{ // [3, 10)
+
+    }
+    10...20{ // [10, 20]
+
+    }
     -1{
 
     }
@@ -43,6 +51,7 @@ main(){
     1{
 
     }
+    // default?
   for(u32 i = 0) i < N{
 
   }

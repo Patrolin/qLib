@@ -35,9 +35,9 @@ def test(*conditions: bool, quiet: bool = False) -> bool:
   else:
     for s in _test_suites[::-1]:
       s.failed += 1
-    root_test_suite = _test_suites[0]
-    tests_passed = root_test_suite.passed
-    tests_failed = root_test_suite.failed
+    last_test_suite = _test_suites[-1]
+    tests_passed = last_test_suite.passed
+    tests_failed = last_test_suite.failed
     if not quiet:
       print(f'{".".join(s.name for s in _test_suites[1:])}#{tests_passed + tests_failed} failed:')
       print(f'  value = {_repr(value)}')
