@@ -1,0 +1,37 @@
+// types
+int
+uint
+i32
+u32
+// collections
+[]
+Set
+Dict
+Heap
+
+
+// stack/data section
+uint x
+[n]uint arr
+
+// heap
+*uint x
+*[]uint arr
+
+
+// code block
+{
+  print("hello world")
+}
+
+// code block with return #1
+{
+  uint x = 0
+  uint y = 2x + 1
+} use y
+
+// code block with return #2
+uint y = {
+  uint x = 0
+  return 2x + 1
+}

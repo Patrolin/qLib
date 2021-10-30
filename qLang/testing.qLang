@@ -1,10 +1,10 @@
 
-[]TestSuites test_suites = [{name=""}]
+[]TestSuite test_suites = [{""}]
 
 TestSuite {
+  str name
   uint passed = 0
   uint failed = 0
-  str name
 
   enter(){
     test_suites.append(this)
