@@ -62,3 +62,12 @@ uint y = {
   uint x = 0
   return 2x + 1
 }
+
+// things to make someday:
+//  NOTE(name): TODO(name): bot
+//    issue (feature, bug, ...) label AI
+//    delete issue when TODO is deleted
+//  git cli
+//    cleanup nonexistent branches
+//  git website
+//    create issue with labels
