@@ -84,10 +84,10 @@ class pSquare:
         n_desired = i * self.n[-1] / (self.bins - 1)
         d = n_desired - self.n[i]
         if ((d >= 1) and ((self.n[i + 1] - self.n[i]) > 1)) or ((d <= -1) and ((self.n[i - 1] - self.n[i]) < -1)):
-          d = (d > 0) - (d < 0)
-          q_desired = self.q[i] + d / (self.n[i + 1] - self.n[i - 1]) * (
-            (self.n[i] - self.n[i - 1] + d) * (self.q[i + 1] - self.q[i]) / (self.n[i + 1] - self.n[i]) +
-            (self.n[i + 1] - self.n[i] - d) * (self.q[i] - self.q[i - 1]) / (self.n[i] - self.n[i - 1]))
+          d = sign(d)
+          q_desired = self.q[i] + d / (self.n[i + 1] - self.n[i - 1]) * ((self.n[i] - self.n[i - 1] + d) * (self.q[i + 1] - self.q[i]) /
+                                                                         (self.n[i + 1] - self.n[i]) + (self.n[i + 1] - self.n[i] - d) *
+                                                                         (self.q[i] - self.q[i - 1]) / (self.n[i] - self.n[i - 1]))
           if (self.q[i - 1] < q_desired < self.q[i + 1]):
             self.q[i] = q_desired
           else:
@@ -116,10 +116,7 @@ def equiprobable_histogram(X: list[float], bins: int, **kwargs):
     x2 = g.q[i + 1]
     ax.add_patch(Rectangle((x1, 0), x2 - x1, 1 / bins, edgecolor='black'))
   # todo: use kwargs
-  ax.set(xlim=(g.q[0], g.q[-1]),
-         title='Equiprobable histogram\n(normal distribution)',
-         xlabel='x',
-         ylabel='probability')
+  ax.set(xlim=(g.q[0], g.q[-1]), title='Equiprobable histogram\n(normal distribution)', xlabel='x', ylabel='probability')
   plt.show()
 
 class NamedList(UserList):
@@ -220,14 +217,8 @@ if __name__ == '__main__':
   print(mean(X), stdev(X, mean(X)))
 
   #sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
-  Z = [
-    0.02, 0.15, 0.74, 0.83, 3.39, 22.37, 10.15, 15.43, 38.62, 15.92, 34.60, 10.28, 1.47, 0.40, 0.05, 11.39, 0.27, 0.42,
-    0.09, 11.37
-  ]
+  Z = [0.02, 0.15, 0.74, 0.83, 3.39, 22.37, 10.15, 15.43, 38.62, 15.92, 34.60, 10.28, 1.47, 0.40, 0.05, 11.39, 0.27, 0.42, 0.09, 11.37]
   print(pQuantile(Z, 0.5)) # correct answer: 6.931, pSquared answer: 4.440634353260338, population median: 2.43
-
-  def sign(x: float) -> float:
-    return (x > 0) - (x < 0)
 
   class FractalRand:
     def __init__(self, seed: float):
