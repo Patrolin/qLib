@@ -1,0 +1,97 @@
+// MS DOS 2.0 header + STUB?
+
+
+PE_signature = "PE\0\0" // image
+
+
+u20 COFF_header { // object and image
+  MachineType machine_type
+  u2 number_of_sections
+  u4 timedate
+  u4 pointer_to_symbol_table
+  u4 number_of_symbols
+  u2 size_of_quote_optional_unquote_header
+  PE_Flags flags
+}
+
+... MachineType {}
+... PE_Flags {}
+
+
+... QuoteOptionalUnquoteHeader {} // image
+
+
+[] SectionTableEntry section_table // image
+u40 SectionTableEntry {
+  u8 name
+  u4 virtual_size
+  u4 virtual_address
+  u4 size_of_raw_data
+  u4 pointer_to_raw_data
+  u4 pointer_to_relocations
+  u4 pointer_to_line_numbers
+  u2 number_of_relocations
+  u2 number_of_line_numbers
+  SectionFlags flags
+}
+
+
+u32 SectionFlags {
+  // byte 4
+  u1 IMAGE_SCN_MEM_WRITE
+  u1 IMAGE_SCN_MEM_READ
+  u1 IMAGE_SCN_MEM_EXECUTE
+  u1 IMAGE_SCN_MEM_SHARED
+  u1 IMAGE_SCN_MEM_NOT_PAGED
+  u1 IMAGE_SCN_MEM_NOT_CACHED
+  u1 IMAGE_SCN_MEM_DISCARDABLE
+  u1 IMAGE_SCN_LNK_NRELOC_OVFL
+
+  // byte 3
+  SectionByteAlignment byte_alignment
+  u1 IMAGE_SCN_MEM_PRELOAD
+  u1 IMAGE_SCN_MEM_LOCKED
+  u2 ... // IMAGE_SCN_MEM_16BIT, IMAGE_SCN_MEM_PURGEABLE
+
+  // byte 2
+  u1 IMAGE_SCN_GPREL
+  u2 ...
+  u1 IMAGE_SCN_LNK_COMDAT
+  u1 IMAGE_SCN_LNK_REMOVE
+  u1 ...
+  u1 IMAGE_SCN_LNK_INFO
+  u1 IMAGE_SCN_LNK_OTHER
+
+  // byte 1
+  u1 IMAGE_SCN_CNT_UNINITIALIZED_DATA
+  u1 IMAGE_SCN_CNT_INITIALIZED_DATA
+  u1 IMAGE_SCN_CNT_CODE
+  u5 ... // IMAGE_SCN_TYPE_NO_PAD
+}
+u4 SectionByteAlignment {
+  1 = 0x1
+  2 = 0x2
+  4 = 0x3
+  8 = 0x4
+  16 = 0x5
+  32 = 0x6
+  64 = 0x7
+  128 = 0x8
+  256 = 0x9
+  512 = 0xA
+  1024 = 0xB
+  2048 = 0xC
+  4096 = 0xD
+  8192 = 0xE
+}
+
+
+/*
+[]u8 section_bytes
+  .text = CODE
+  .bss = .data = .rdata = DATA
+  .rsrc = resources
+  .idata = imports
+  .edata = exports
+  .debug
+*/

@@ -1,7 +1,7 @@
 
-[]TestSuite test_suites = [{""}]
+*[]TestSuite test_suites = [{""}] // TODO: who allocates this?
 
-TestSuite {
+... TestSuite {
   str name
   uint passed = 0
   uint failed = 0
@@ -14,7 +14,7 @@ TestSuite {
   }
 }
 
-bool test([]bool conditions){
+bool test([]bool conditions, bool quiet = false){
   [conditions.len]bool expectedValue
   for i in 0..conditions.len{
     expectedValue[i] = true

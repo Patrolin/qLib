@@ -3,6 +3,7 @@ int
 uint
 i32
 u32
+
 // collections
 []
 Set
@@ -17,6 +18,32 @@ uint x
 // heap
 *uint x
 *[]uint arr
+
+
+// struct
+u96 Vec3 {
+  f32 x
+  f32 y
+  f32 z
+}
+
+// enum
+u4 Zodiac {
+  Aries = 0
+  Taurus = 1
+  Gemini = 2
+  Cancer = 3
+  Leo = 4
+  Virgo = 5
+  Libra = 6
+  ...
+}
+
+// tagged union
+u96 Foo {
+  u32
+  Vec3
+}
 
 
 // code block
