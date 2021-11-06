@@ -2,16 +2,16 @@ from math import log
 # https://handwiki.org/wiki/Gestalt_Pattern_Matching
 # https://handwiki.org/wiki/Damerau–Levenshtein_distance
 
-def string_similarity(a: str, b: str) -> float:
-  '''return a string similarity of a, b in O(len(a) + len(b))'''
-  length_sum = len(a) + len(b)
+def string_similarity(value: str, option: str) -> float:
+  '''return a string similarity of value, option in O(len(value) + len(option))'''
+  length_sum = len(value) + len(option)
   if length_sum == 0: return 1.0
 
   counts = dict()
-  for char in a:
+  for char in value:
     counts[char] = counts[char] + 1 if (char in counts) else 1
   matches, bad_mismatches, okay_mismatches = 0, 0, 0
-  for char in b:
+  for char in option:
     if (char in counts):
       if (counts[char] > 0):
         counts[char] -= 1
@@ -24,15 +24,15 @@ def string_similarity(a: str, b: str) -> float:
     bad_mismatches += count
 
   if (bad_mismatches + okay_mismatches) == 0: return 1.0
-  #print(mismatches, a_mismatches, b_mismatches)
   return (2 * matches / length_sum) / log(1 + bad_mismatches + okay_mismatches / 2)
 
-def match_options(value: str, options: list[str]) -> list[str]:
+def match_options(value: str, options: list[str], cutoff: float = 0.1) -> list[str]:
+  '''return options filtered and sorted by string_similarity() in O((len(value) + len(option)) * len(options))'''
   acc = []
   acc_similarities = dict()
   for s in options:
     similarity = string_similarity(value, s)
-    if similarity > 0.1:
+    if similarity >= cutoff:
       acc.append(s)
       acc_similarities[s] = similarity
   return sorted(acc, key=lambda s: acc_similarities[s])
