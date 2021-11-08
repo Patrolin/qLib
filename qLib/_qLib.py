@@ -14,17 +14,6 @@ def isqrt(x: float) -> None:
 
 # exp, expm1, log1p
 
-def sin(x: float) -> float:
-  # return sin(x) for x on (-halftau, halftau)
-  y = 2 / quarter_tau * x - 1 / (quarter_tau**2) * x
-  #return y
-  return 0.775 * y + 0.225 * (y * abs(y))
-
-def cos(x: float) -> float:
-  x += quarter_tau
-  if x > half_tau: x -= tau
-  return sin(x)
-
 def qerp(x, x1, x2, x3, y1, y2, y3):
   return ((x - x2) * (x - x3) * (x2 - x3) * y1 - (x - x1) * (x - x3) * (x1 - x3) * y2 + (x - x1) * (x - x2) *
           (x1 - x2) * y3) / ((x1 - x2) * (x1 - x3) * (x2 - x3))

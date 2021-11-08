@@ -15,6 +15,29 @@ def deg(radians: float) -> float:
 def rad(degrees: float) -> float:
   return degrees * tau / 360
 
+def lerp(a: float, x: float, y: float) -> float:
+  return (1 - a) * x + a * y
+
+def abs(x: float) -> float:
+  return lerp(float(x < 0), x, -x)
+
+def sign(x: float) -> int:
+  return (x > 0) - (x < 0)
+
+def _sin(x: float, half_interval: float = half_tau) -> float:
+  '''return sin(x * half_tau/half_interval) on [0, 1] for x on [-half_interval, half_interval]'''
+  y = 4 / half_interval * x - 4 / half_interval**2 * x * abs(x)
+  return y
+  #return 0.775 * y + 0.225 * (y * abs(y))
+
+def sin(x: float) -> float:
+  '''return sin(x) on [0, 1] for x on (-inf, inf)'''
+  return _sin(half_tau - (x % tau))
+
+def cos(x: float) -> float:
+  '''return cos(x) on [0, 1] for x on (-inf, inf)'''
+  return sin(x + quarter_tau)
+
 # functions
 # a + b
 # a - b
@@ -24,9 +47,6 @@ def rad(degrees: float) -> float:
 # a mod b
 # a rem b
 # log(x) = (x**epsilon - 1) / epsilon
-
-def sign(x: float) -> int:
-  return (x > 0) - (x < 0)
 
 def Gamma(x: int | float) -> float:
   '''return Gamma(x) in O(log n)'''
