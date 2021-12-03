@@ -4,12 +4,26 @@ from .iterables import *
 from .math import *
 
 # (sample mean, sample standard deviation)
+@overload
 def mean(X: list[int | float]) -> float:
+  ...
+
+@overload
+def mean(X: list[int | float], weights: list[int | float]) -> float:
+  ...
+
+def mean(X: list[int | float], weights: Optional[list[int | float]] = None):
   '''return the population mean = sample mean of X in O(n)'''
-  acc = 0.0
-  for x in X:
-    acc += x
-  return acc / len(X)
+  if weights == None:
+    acc = 0.0
+    for x in X:
+      acc += x
+    return acc / len(X)
+  else:
+    acc = 0.0
+    for i in range(len(X)):
+      acc += X[i] * weights[i]
+    return acc
 
 def stdev(X: list[int | float], u: float) -> float:
   '''return the sample standard deviation of X given the sample mean u in O(n)'''

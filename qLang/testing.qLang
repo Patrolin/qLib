@@ -1,38 +1,35 @@
 
 *[]TestSuite test_suites = [{""}] // TODO: who allocates this?
 
-... TestSuite {
+TestSuite {
   str name
   uint passed = 0
   uint failed = 0
+  uint total() {
+    return self.passed + self.failed
+  }
 
-  enter(){
+  enter() {
     test_suites.append(this)
   }
-  exit(){
+  exit() {
     test_suites.pop()
   }
 }
 
-bool test([]bool conditions, bool quiet = false){
-  [conditions.len]bool expectedValue
-  for i in 0..conditions.len{
-    expectedValue[i] = true
-  }
+bool all(bool[] X) {
+  return reduce(X, true, acc & condition)
+}
 
-  bool passed = (conditions == expectedValue)
-  if passed{
-    for s in test_suites{
-      s.passed += 1
-    }
-  } else{
-    for s in test_suites{
-      s.failed += 1
-    }
-    TestSuite last_s = test_suites[test_suites.len-1]
-    if !quiet{
-      print("%0#%1 failed:", [test_suites[1:].map(x => x.name).join('.'), last_s.passed + last_s.failed])
-      print("value = %0", conditions)
+bool test([]bool conditions, bool quiet = false) {
+  bool passed = reduce(conditions, true, acc & it)
+  if passed {
+    for(test_suites, it.passed += 1)
+  } else {
+    for(test_suites, it.failed += 1)
+    if !quiet {
+      print("%#% failed:", [test_suites[1:].map(x => x.name).join('.'), test_suites[test_suites.len-1].total()])
+      print("value = %", conditions)
     }
   }
 }

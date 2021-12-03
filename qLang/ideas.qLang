@@ -6,9 +6,12 @@ u32
 
 // collections
 []
+LinkedList?
 Set
 Dict
+Stack
 Heap
+*X // heap allocated
 
 
 // stack/data section
@@ -62,6 +65,23 @@ uint y = {
   uint x = 0
   return 2x + 1
 }
+
+
+// loops
+for(X, {
+  print(it, it_index)
+})
+
+while(x < 10, {
+  print(it_index)
+})
+
+_ reduce(_[] X, _ initialValue, code consume) {
+  acc = initialValue
+  for(X, consume)
+  return acc
+}
+
 
 // things to make someday:
 //  NOTE(name): TODO(name): bot

@@ -1,0 +1,49 @@
+
+_[] mean(_[] X) {
+  return reduce(X, 0, acc += it) / X.len
+}
+
+_[] mean(_[] X, _[] weights) {
+  return reduce(X, 0, acc += it*weights[it_index])
+}
+
+_[] stdev(_[] X, _[] u) {
+  return (reduce(X, 0, acc += (it - u)**2) / (X.len - 1))**0.5
+}
+
+_ mode(_[] X) {
+  // return an estimated in-distribution mode of a sorted X in O(n)
+  u = mean(X)
+  A = LinkedList(X)
+  for(X.len-1..1, {
+    // remove farthest neighbor of the mean
+    if abs(A[0] - u) >= abs(A[-1] - u) {
+      u -= (A[0] - u) / it
+      A.popLeft()
+    } else {
+      u -= (A[-1] - u) / it
+      A.pop()
+    }
+  })
+  return A[0]
+}
+
+EMA {
+  _ xOld = 0.0
+  _ q = 0.1
+  next(_ x) {
+    // return the next EMA step in O(1)
+    self.xOld = lerp(self.q, x, self.xOld)
+  }
+}
+
+Psquared {
+  ...
+}
+pQuantile() {
+  ...
+}
+
+sortedplot() {
+  ...
+}

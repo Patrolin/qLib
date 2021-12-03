@@ -51,6 +51,7 @@ foreach ($objItem in $colItems) {
   Write-Host $objItem.CurrentClockSpeed
 }'''
 
-import ctypes
+if __name__ == '__main__':
+  import ctypes
 
-print(ctypes.windll.wmi)
+  print(ctypes.windll.wmi)
