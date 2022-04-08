@@ -1,18 +1,35 @@
-// types
+// basic types
 int
+int(8)
 uint
-i32
-u32
+uint(1)
+float
+float(32)
+
+
+// structs
+struct Vec3 {
+  float(32) x, y, z
+}
+
+// enums
+enum Zodiac {
+  ONE
+  TWO
+}
+
+enum Stuff {
+  ONE = 1
+  TWO = 2
+}
+
 
 // collections
 []
-LinkedList?
-Set
-Dict
-Stack
-Heap
-*X // heap allocated
-
+LinkedList(T)?
+BucketArray(T, N)?
+Set(T)
+Dict(K, V)
 
 // stack/data section
 uint x
@@ -23,63 +40,13 @@ uint x
 *[]uint arr
 
 
-// struct
-u96 Vec3 {
-  f32 x
-  f32 y
-  f32 z
-}
-
-// enum
-u4 Zodiac {
-  Aries = 0
-  Taurus = 1
-  Gemini = 2
-  Cancer = 3
-  Leo = 4
-  Virgo = 5
-  Libra = 6
-  ...
-}
-
-// tagged union
-u96 Foo {
-  u32
-  Vec3
-}
-
-
-// code block
-{
-  print("hello world")
-}
-
-// code block with return #1
-{
-  uint x = 0
-  uint y = 2x + 1
-} use y
-
-// code block with return #2
-uint y = {
-  uint x = 0
-  return 2x + 1
-}
-
-
 // loops
-for(X, {
+for X {
   print(it, it_index)
-})
+}
 
-while(x < 10, {
+while x < 10 {
   print(it_index)
-})
-
-_ reduce(_[] X, _ initialValue, code consume) {
-  acc = initialValue
-  for(X, consume)
-  return acc
 }
 
 
