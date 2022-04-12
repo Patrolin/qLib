@@ -5,15 +5,16 @@ from .math import *
 
 # (sample mean, sample standard deviation)
 @overload
-def mean(X: list[int | float]) -> float:
+def meanOrZero(X: list[int] | list[float]) -> float:
     ...
 
 @overload
-def mean(X: list[int | float], weights: list[int | float]) -> float:
+def meanOrZero(X: list[int] | list[float], weights: list[int] | list[float]) -> float:
     ...
 
-def mean(X: list[int | float], weights: Optional[list[int | float]] = None):
+def meanOrZero(X: list[int] | list[float], weights: Optional[list[int] | list[float]] = None):
     '''return the population mean = sample mean of X in O(n)'''
+    if len(X) == 0: return 0
     if weights == None:
         acc = 0.0
         for x in X:
@@ -25,17 +26,19 @@ def mean(X: list[int | float], weights: Optional[list[int | float]] = None):
             acc += X[i] * weights[i]
         return acc
 
-def stdev(X: list[int | float], u: float) -> float:
+def stdevOrZero(X: list[int] | list[float], u: float) -> float:
     '''return the sample standard deviation of X given the sample mean u in O(n)'''
+    if len(X) == 1: return 0
     acc = 0.0
     for x in X:
         acc += (x - u)**2
     return (acc / (len(X) - 1))**0.5
 
 # NTP stuff
-def mode(X: list[int | float]) -> float:
+def modeOrZero(X: list[int] | list[float]) -> float:
     '''return an estimated in-distribution mode of a sorted X in O(n)'''
-    u = mean(X)
+    if len(X) == 0: return 0
+    u = meanOrZero(X)
     A = LinkedList(X)
     for n in range(len(X) - 1, 0, -1):
         # remove farthest neighbor of the mean
@@ -151,7 +154,7 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
     ]
     fig, ax = plt.subplots()
     Y_named = [NamedList(y.name if isinstance(y, NamedList) else f'{i}', y) for i, y in enumerate(Y)]
-    Y_named = sorted(Y_named, key=lambda y: mean(y.data))
+    Y_named = sorted(Y_named, key=lambda y: meanOrZero(y.data))
 
     X = None
     for i, y in enumerate(Y_named):
@@ -176,12 +179,12 @@ def sortedplot(*Y: Union[NamedList, list], **kwargs):
 
 if __name__ == '__main__':
     X = sorted([0, .24, .25, 1])
-    print(mode(X), X)
+    print(modeOrZero(X), X)
 
     phi = (1 + 5**.5) / 2
     X = sorted([(0.5 + i * 1 / phi) % 1 for i in range(6)])
-    print(mode(X), X)
-    print(mean(X), stdev(X, mean(X)))
+    print(modeOrZero(X), X)
+    print(meanOrZero(X), stdevOrZero(X, meanOrZero(X)))
 
     #sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
     Z = [0.02, 0.15, 0.74, 0.83, 3.39, 22.37, 10.15, 15.43, 38.62, 15.92, 34.60, 10.28, 1.47, 0.40, 0.05, 11.39, 0.27, 0.42, 0.09, 11.37]
