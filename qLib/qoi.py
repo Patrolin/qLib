@@ -1,7 +1,7 @@
-__all__ = ["decode_qoi"]
+__all__ = ["decode_qoi", "read_qoi", "encode_qoi", "write_qoi"]
 
 def u32(R: int, G: int, B: int, A: int) -> int:
-    return (R << 24) + (G << 16) + (B << 8) + A
+    return ((R << 24) + (G << 16) + (B << 8) + A)
 
 def RGBA(u32: int) -> tuple[int, int, int, int]:
     R = u32 >> 24
@@ -9,6 +9,15 @@ def RGBA(u32: int) -> tuple[int, int, int, int]:
     B = (u32 >> 8) & 0xff
     A = u32 & 0xff
     return (R, G, B, A)
+
+def decode_u32(v: bytes) -> int:
+    return u32(v[0], v[1], v[2], v[3])
+
+def encode_u32(v: int) -> bytes:
+    return v.to_bytes(4, byteorder="big")
+
+def encode_u8(v: int) -> bytes:
+    return v.to_bytes(1, byteorder="big")
 
 class QoiImage:
     MAGIC = b"qoif"
@@ -25,72 +34,165 @@ class QoiImage:
             i = y * self.width + x + j
             print(RGBA(self.data[i]) if i < len(self.data) else None)
 
-    def encode(self):
-        pass # TODO
+QOI_OP_RGB = 0xfe
+QOI_OP_RGBA = 0xff
+QOI_OP_INDEX = 0b00
+QOI_OP_DIFF = 0b01
+QOI_OP_LUMA = 0b10
+QOI_OP_RUN = 0b11
 
-def decode_u32(v: bytes) -> int:
-    return u32(v[0], v[1], v[2], v[3])
+def qoi_hash(R: int, G: int, B: int, A: int) -> int:
+    return (R * 3 + G * 5 + B * 7 + A * 11) & 0x3f
 
-def decode_qoi(path: str) -> QoiImage:
-    with open(path, "rb") as f:
-        # header
-        assert f.read(4) == QoiImage.MAGIC
-        width = decode_u32(f.read(4))
-        height = decode_u32(f.read(4))
-        channels = f.read(1)[0]
-        colorSpace = f.read(1)[0]
-        print(width, height, channels, colorSpace)
-        # data
-        acc = QoiImage(width, height, colorSpace == 1)
-        seen_pixels = [0] * 64
-        R, G, B, A = 0, 0, 0, 255
-        i = 0
-        while i < len(acc.data):
-            byte = f.read(1)[0]
-            print(byte == 0xff, byte == 0xfe, byte >> 6)
-            if byte == 0xff:
-                R = f.read(1)[0]
-                G = f.read(1)[0]
-                B = f.read(1)[0]
-                A = f.read(1)[0]
-                #print(0xff, i, (R, G, B, A))
-            elif byte == 0xfe:
-                R = f.read(1)[0]
-                G = f.read(1)[0]
-                B = f.read(1)[0]
-                #print(0xfe, i, (R, G, B, A))
-            else:
-                twoTag = byte >> 6
-                if twoTag == 0b00:
-                    R, G, B, A = RGBA(seen_pixels[byte & 0x3f])
-                    #print(twoTag, i, byte, RGBA(pixel), (R, G, B, A))
-                elif twoTag == 0b01:
-                    dR = ((byte >> 4) & 0x03) - 2
-                    dG = ((byte >> 2) & 0x03) - 2
-                    dB = (byte & 0x03) - 2
-                    R = (R + dR) & 0xff
-                    G = (G + dG) & 0xff
-                    B = (B + dB) & 0xff
-                    #print(twoTag, i, byte, (dR, dG, dB), (R, G, B, A))
-                elif twoTag == 0b10:
-                    dG = (byte & 0x3f) - 32
-                    byte = f.read(1)[0]
-                    dRdG = (byte >> 4) - 8
-                    dBdG = (byte & 0x0f) - 8
-                    R = (R + dRdG + dG) & 0xff
-                    G = (G + dG) & 0xff
-                    B = (B + dBdG + dG) & 0xff
-                    #print(twoTag, i, byte, (dG, dRdG, dBdG), (R, G, B, A))
-                else:
-                    n = (byte & 0x3f) + 1
-                    for j in range(n):
-                        acc.data[i + j] = u32(R, G, B, A)
-                    #print(twoTag, f"{i}-{i+n-1}")
-                    i += n
-                    continue
-            seen_pixels[(R * 3 + G * 5 + B * 7 + A * 11) & 0x3f] = u32(R, G, B, A)
-            acc.data[i] = u32(R, G, B, A)
-            i += 1
-        #acc.print(0, 0, 16)
-        #acc.print(0, 255, 256)
+def decode_qoi(qoi: bytes, debug=False) -> QoiImage:
+    # header
+    assert qoi[0:4] == QoiImage.MAGIC
+    width = decode_u32(qoi[4:8])
+    height = decode_u32(qoi[8:12])
+    channels = qoi[12]
+    colorSpace = qoi[13]
+    if debug: print(width, height, channels, colorSpace)
+
+    # data
+    acc = QoiImage(width, height, colorSpace == 1)
+    seen = [0] * 64
+    R, G, B, A = 0, 0, 0, 255
+    i = 0
+    j = 14
+    while i < len(acc.data):
+        byte = qoi[j]
+        j += 1
+        if byte == QOI_OP_RGBA:
+            R = qoi[j]
+            G = qoi[j + 1]
+            B = qoi[j + 2]
+            A = qoi[j + 3]
+            j += 4
+            if debug: print(0xff, i, (R, G, B, A))
+        elif byte == QOI_OP_RGB:
+            R = qoi[j]
+            G = qoi[j + 1]
+            B = qoi[j + 2]
+            j += 3
+            if debug: print(0xfe, i, (R, G, B, A))
+        else:
+            twoTag = byte >> 6
+            if twoTag == QOI_OP_INDEX:
+                R, G, B, A = RGBA(seen[byte & 0x3f])
+                if debug: print(twoTag, i, byte, (R, G, B, A))
+            elif twoTag == QOI_OP_DIFF:
+                dR = ((byte >> 4) & 0x03) - 2
+                dG = ((byte >> 2) & 0x03) - 2
+                dB = (byte & 0x03) - 2
+                R = (R + dR) & 0xff
+                G = (G + dG) & 0xff
+                B = (B + dB) & 0xff
+                if debug: print(twoTag, i, byte, (dR, dG, dB), (R, G, B, A))
+            elif twoTag == QOI_OP_LUMA:
+                dG = (byte & 0x3f) - 32
+                byte = qoi[j]
+                j += 1
+                dRdG = (byte >> 4) - 8
+                dBdG = (byte & 0x0f) - 8
+                R = (R + dRdG + dG) & 0xff
+                G = (G + dG) & 0xff
+                B = (B + dBdG + dG) & 0xff
+                if debug: print(twoTag, i, byte, (dG, dRdG, dBdG), (R, G, B, A))
+            else: # QOI_OP_RUN
+                n = (byte & 0x3f) + 1
+                for j in range(n):
+                    acc.data[i + j] = u32(R, G, B, A)
+                if debug: print(twoTag, f"{i}-{i+n-1}")
+                i += n
+                continue
+        seen[qoi_hash(R, G, B, A)] = u32(R, G, B, A)
+        acc.data[i] = u32(R, G, B, A)
+        i += 1
+    #assert j == len(qoi), f"Expected EOF, found extra bytes: {qoi[j:]}"
+    if debug:
+        acc.print(0, 0, 16)
+        acc.print(0, 1, 16)
     return acc
+
+def read_qoi(path: str, debug=False) -> QoiImage:
+    with open(path, "rb") as f:
+        return decode_qoi(f.read())
+
+def encode_qoi(image: QoiImage, debug=False) -> bytes:
+    # header
+    acc = b""
+    acc += b"qoif"
+    acc += encode_u32(image.width)
+    acc += encode_u32(image.height)
+    acc += encode_u8(4)
+    acc += encode_u8(image.isLinear)
+
+    # data
+    seen = [0] * 64
+    R, G, B, A = 0, 0, 0, 255
+    i = 0
+    if debug:
+        image.print(0, 0, 16)
+        image.print(0, 1, 16)
+    while i < len(image.data):
+        # QOI_OP_RUN
+        if u32(R, G, B, A) == image.data[i]:
+            n = 0
+            for n in range(62):
+                if i + n + 1 >= len(image.data) or u32(R, G, B, A) != image.data[i + n + 1]:
+                    break
+            if debug: print(QOI_OP_RUN, f"{i}-{i+n}")
+            acc += encode_u8((QOI_OP_RUN << 6) + n)
+            i += n + 1
+            if debug: print(f"{acc[-1]:08b}")
+            continue
+
+        while 1:
+            # QOI_OP_INDEX
+            newR, newG, newB, newA = RGBA(image.data[i])
+            dR, dG, dB = newR - R, newG - G, newB - B
+            R, G, B, A = newR, newG, newB, newA
+            j = qoi_hash(newR, newG, newB, newA)
+            if seen[j] == image.data[i]:
+                if debug: print(QOI_OP_INDEX, i, RGBA(seen[j]))
+                acc += encode_u8((QOI_OP_INDEX << 6) + j)
+                break
+            seen[j] = image.data[i]
+
+            # QOI_OP_RGBA
+            if newA != A:
+                if debug: print(QOI_OP_RGBA, i, (newR, newG, newB, newA))
+                acc += encode_u8(QOI_OP_RGBA)
+                acc += encode_u8(newR)
+                acc += encode_u8(newG)
+                acc += encode_u8(newB)
+                acc += encode_u8(newA)
+                break
+            # QOI_OP_DIFF
+            if (-2 <= dR <= 1) and (-2 <= dG <= 1) and (-2 <= dB <= 1):
+                if debug: print(QOI_OP_DIFF, i, (newR, newG, newB, newA), (dR, dG, dB))
+                acc += encode_u8((QOI_OP_DIFF << 6) + ((dR + 2) << 4) + ((dG + 2) << 2) + (dB + 2))
+                break
+            # QOI_OP_LUMA
+            dRdG = dR - dG
+            dBdG = dB - dG
+            if (-32 <= dG <= 31) and (-8 <= dRdG <= 7) and (-8 <= dBdG <= 7):
+                if debug: print(QOI_OP_LUMA, i, (newR, newG, newB, newA), (dG, dRdG, dBdG))
+                acc += encode_u8((QOI_OP_LUMA << 6) + (dG + 32))
+                acc += encode_u8(((dRdG + 8) << 4) + (dBdG + 8))
+                break
+            # QOI_OP_RGB
+            if debug: print(QOI_OP_RGB, i, (newR, newG, newB, newA))
+            acc += encode_u8(QOI_OP_RGB)
+            acc += encode_u8(newR)
+            acc += encode_u8(newG)
+            acc += encode_u8(newB)
+            break
+        i += 1
+        if debug: print({j: RGBA(seen[j]) for j in range(64) if seen[j] != 0})
+        if debug: print([f"{v:08b}" for v in acc[-5:]])
+    return acc
+
+def write_qoi(path: str, image: QoiImage, debug=False):
+    with open(path, "wb+") as f:
+        f.write(encode_qoi(image, debug=debug))
