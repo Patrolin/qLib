@@ -115,11 +115,11 @@ i += 1
 coverageTest.image.data[i] = 0xfc7e_fcfe
 coverageTest.bytes += QOI_OP_LUMA(0, 7, -8)
 i += 1
-print(coverageTest.bytes[:14])
 
 def printBytes(bytes: bytes) -> str:
     return "".join(f"\\x{v:02x}" for v in bytes)
 
+#print(printBytes(coverageTest.bytes[:14]))
 #print(printBytes(coverageTest.bytes[14:]))
 
 def assertImageMatches(image1: QoiImage, image2: QoiImage):
