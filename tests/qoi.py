@@ -7,9 +7,9 @@ def testDecodeQoi():
 
 @test
 def testEncodeQoi():
-    image = read_qoi(relative_path(__file__, "/data/fishWaterCopy.qoi"))
-    write_qoi(relative_path(__file__, "/data/fishWaterCopy2.qoi"), image)
-    imageCopy = read_qoi(relative_path(__file__, "/data/fishWaterCopy2.qoi"))
+    image = read_qoi(relative_path(__file__, "/data/fishWater.qoi"))
+    write_qoi(relative_path(__file__, "/data/fishWaterCopy.qoi"), image)
+    imageCopy = read_qoi(relative_path(__file__, "/data/fishWaterCopy.qoi"))
     for y in range(image.height):
         for x in range(image.width):
             i = y * image.width + x
