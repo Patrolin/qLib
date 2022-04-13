@@ -15,8 +15,16 @@ def deg(radians: float) -> float:
 def rad(degrees: float) -> float:
     return degrees * tau / 360
 
-def lerp(a: float, x: float, y: float) -> float:
-    return (1 - a) * x + a * y
+@overload
+def lerp(t: bool, x: int, y: int) -> int:
+    ...
+
+@overload
+def lerp(t: float, x: float, y: float) -> float:
+    ...
+
+def lerp(t: bool | float, x: int | float, y: int | float) -> int | float:
+    return x * (1 - t) + y * t
 
 def abs(x: float) -> float:
     return lerp(float(x < 0), x, -x)
