@@ -1,4 +1,5 @@
-from qLib import *
+from qLib.qoi import decode_qoi, read_qoi, encode_qoi, write_qoi, QoiImage
+from qLib import relative_path, test, run_tests
 
 def encode_u8(u8: int) -> bytes:
     assert 0 <= u8 < 256
@@ -20,6 +21,13 @@ class TestCase:
     def __init__(self, image: QoiImage, bytes: bytes):
         self.image = image
         self.bytes = bytes
+        self.i = 0
+
+    def add(self, color: int, bytes: bytes, n=1):
+        for k in range(n):
+            self.image.data[self.i + k] = color
+        self.i += n
+        self.bytes += bytes
 
 def makeTestCase(width: int, height: int, channels: int, isLinear: bool) -> TestCase:
     return TestCase( \
@@ -56,65 +64,29 @@ def QOI_OP_RUN(n: int) -> bytes:
     return encode_u8((0b11 << 6) + n)
 
 pixelTest = makeTestCase(1, 1, channels=3, isLinear=True)
-pixelTest.image.data[0] = BLACK
-pixelTest.bytes += QOI_OP_RUN(0)
+pixelTest.add(BLACK, QOI_OP_RUN(0))
 
-coverageTest = makeTestCase(211, 21, channels=4, isLinear=False)
-coverageTest.image.data[0] = BLACK
-coverageTest.bytes += QOI_OP_RUN(0)
-coverageTest.image.data[1] = WHITE
-coverageTest.bytes += QOI_OP_DIFF(-1, -1, -1)
-coverageTest.image.data[2] = BLACK
-coverageTest.bytes += QOI_OP_DIFF(1, 1, 1)
-i = 3
+coverageTest = makeTestCase(89, 51, channels=4, isLinear=False)
+coverageTest.add(BLACK, QOI_OP_RUN(0))
+coverageTest.add(WHITE, QOI_OP_DIFF(-1, -1, -1))
+coverageTest.add(BLACK, QOI_OP_DIFF(1, 1, 1))
 for n in range(62):
-    for k in range(n + 2):
-        coverageTest.image.data[i + k] = WHITE
-    coverageTest.bytes += QOI_OP_INDEX(WHITE)
-    coverageTest.bytes += QOI_OP_RUN(n)
-    i += n + 2
-    for k in range(n + 2):
-        coverageTest.image.data[i + k] = BLACK
-    coverageTest.bytes += QOI_OP_INDEX(BLACK)
-    coverageTest.bytes += QOI_OP_RUN(n)
-    i += n + 2
+    coverageTest.add(WHITE, QOI_OP_INDEX(WHITE) + QOI_OP_RUN(n), n=n + 2)
+    coverageTest.add(BLACK, QOI_OP_INDEX(BLACK) + QOI_OP_RUN(n), n=n + 2)
 for n in range(62, 65):
-    for k in range(n + 2):
-        coverageTest.image.data[i + k] = WHITE
-    coverageTest.bytes += QOI_OP_INDEX(WHITE)
-    coverageTest.bytes += QOI_OP_RUN(61)
-    coverageTest.bytes += QOI_OP_RUN(n - 62)
-    i += n + 2
-    for k in range(n + 2):
-        coverageTest.image.data[i + k] = BLACK
-    coverageTest.bytes += QOI_OP_INDEX(BLACK)
-    coverageTest.bytes += QOI_OP_RUN(61)
-    coverageTest.bytes += QOI_OP_RUN(n - 62)
-    i += n + 2
-coverageTest.image.data[i] = 0x0000_00fe
-coverageTest.bytes += QOI_OP_RGBA(0x0000_00fe)
-i += 1
-coverageTest.image.data[i] = 0x0100_fefe
-coverageTest.bytes += QOI_OP_DIFF(1, 0, -2)
-i += 1
-coverageTest.image.data[i] = 0xff01_fffe
-coverageTest.bytes += QOI_OP_DIFF(-2, 1, 1)
-i += 1
-coverageTest.image.data[i] = 0xfeff_fefe
-coverageTest.bytes += QOI_OP_DIFF(-1, -2, -1)
-i += 1
-coverageTest.image.data[i] = 0xfe7f_fefe
-coverageTest.bytes += QOI_OP_RGB(0xfe7f_fefe)
-i += 1
-coverageTest.image.data[i] = 0xde5f_defe
-coverageTest.bytes += QOI_OP_LUMA(-32, 0, 0)
-i += 1
-coverageTest.image.data[i] = 0xf57e_04fe
-coverageTest.bytes += QOI_OP_LUMA(31, -8, 7)
-i += 1
-coverageTest.image.data[i] = 0xfc7e_fcfe
-coverageTest.bytes += QOI_OP_LUMA(0, 7, -8)
-i += 1
+    coverageTest.add(WHITE, QOI_OP_INDEX(WHITE) + QOI_OP_RUN(61) + QOI_OP_RUN(n - 62), n=n + 2)
+    coverageTest.add(BLACK, QOI_OP_INDEX(BLACK) + QOI_OP_RUN(61) + QOI_OP_RUN(n - 62), n=n + 2)
+coverageTest.add(0x0000_00fe, QOI_OP_RGBA(0x0000_00fe))
+coverageTest.add(0x0100_fefe, QOI_OP_DIFF(1, 0, -2))
+coverageTest.add(0xff01_fffe, QOI_OP_DIFF(-2, 1, 1))
+coverageTest.add(0xfeff_fefe, QOI_OP_DIFF(-1, -2, -1))
+coverageTest.add(0xfe7f_fefe, QOI_OP_RGB(0xfe7f_fefe))
+coverageTest.add(0xde5f_defe, QOI_OP_LUMA(-32, 0, 0))
+coverageTest.add(0xf57e_04fe, QOI_OP_LUMA(31, -8, 7))
+coverageTest.add(0xfc7e_fcfe, QOI_OP_LUMA(0, 7, -8))
+for n in range(9):
+    coverageTest.add(WHITE, QOI_OP_INDEX(WHITE) + QOI_OP_RUN(n), n=n + 2)
+    coverageTest.add(BLACK, QOI_OP_INDEX(BLACK) + QOI_OP_RUN(n), n=n + 2)
 
 def printBytes(bytes: bytes) -> str:
     return "".join(f"\\x{v:02x}" for v in bytes)
@@ -130,8 +102,7 @@ def assertImageMatches(image1: QoiImage, image2: QoiImage):
         for x in range(image1.width):
             i = y * image1.width + x
             if image1.data[i] != image2.data[i]:
-                image1.print(0, y, image1.width)
-                assert False
+                assert False, image1.print(0, y, image1.width)
 
 def assertBytesMatch(qoi1: bytes, qoi2: bytes):
     for i in range(len(qoi2)):
@@ -162,14 +133,15 @@ def testEncodeQoiIsReversible():
     assertImageMatches(decode_qoi(encode_qoi(pixelTest.image)), pixelTest.image)
     assertImageMatches(decode_qoi(encode_qoi(coverageTest.image)), coverageTest.image)
 
+def assertReadWriteQoi(path: str, testCase: TestCase):
+    write_qoi(path, testCase.image)
+    image = read_qoi(path)
+    assertImageMatches(image, testCase.image)
+
 @test
 def testReadWriteQoi():
-    path = relative_path(__file__, "/data/pixelTest.qoi")
-    write_qoi(path, pixelTest.image)
-    assertImageMatches(read_qoi(path), pixelTest.image)
-    path = relative_path(__file__, "/data/coverageTest.qoi")
-    write_qoi(path, coverageTest.image)
-    assertImageMatches(read_qoi(path), coverageTest.image)
+    assertReadWriteQoi(relative_path(__file__, "/data/pixelTest.qoi"), pixelTest)
+    assertReadWriteQoi(relative_path(__file__, "/data/coverageTest.qoi"), coverageTest)
 
 if __name__ == "__main__":
     run_tests()

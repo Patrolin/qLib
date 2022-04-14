@@ -31,10 +31,11 @@ class QoiImage:
         self.isLinear = isLinear
 
     def print(self, x: int, y: int, n: int):
-        print(f"-- {x} {y} --")
+        acc = f"-- {x} {y} --"
         for j in range(n):
             i = y * self.width + x + j
-            print(RGBA(self.data[i]) if i < len(self.data) else None)
+            acc += f"\n{RGBA(self.data[i]) if i < len(self.data) else None}"
+        return acc
 
 QOI_OP_RGB = 0xfe
 QOI_OP_RGBA = 0xff
@@ -46,14 +47,13 @@ QOI_OP_RUN = 0b11
 def qoi_hash(R: int, G: int, B: int, A: int) -> int:
     return (R * 3 + G * 5 + B * 7 + A * 11) & 0x3f
 
-def decode_qoi(qoi: bytes, debug=False) -> QoiImage:
+def decode_qoi(qoi: bytes) -> QoiImage:
     # header
     assert qoi[0:4] == QoiImage.MAGIC
     width = decode_u32(qoi[4:8])
     height = decode_u32(qoi[8:12])
     channels = qoi[12]
     colorSpace = qoi[13]
-    if debug: print(width, height, channels, colorSpace)
 
     # data
     acc = QoiImage(width, height, colorSpace == 1)
@@ -70,18 +70,15 @@ def decode_qoi(qoi: bytes, debug=False) -> QoiImage:
             B = qoi[j + 2]
             A = qoi[j + 3]
             j += 4
-            if debug: print(0xff, i, (R, G, B, A))
         elif byte == QOI_OP_RGB:
             R = qoi[j]
             G = qoi[j + 1]
             B = qoi[j + 2]
             j += 3
-            if debug: print(0xfe, i, (R, G, B, A))
         else:
             twoTag = byte >> 6
             if twoTag == QOI_OP_INDEX:
                 R, G, B, A = RGBA(seen[byte & 0x3f])
-                if debug: print(twoTag, i, byte, (R, G, B, A))
             elif twoTag == QOI_OP_DIFF:
                 dR = ((byte >> 4) & 0b11) - 2
                 dG = ((byte >> 2) & 0b11) - 2
@@ -89,7 +86,6 @@ def decode_qoi(qoi: bytes, debug=False) -> QoiImage:
                 R = (R + dR) & 0xff
                 G = (G + dG) & 0xff
                 B = (B + dB) & 0xff
-                if debug: print(twoTag, i, byte, (dR, dG, dB), (R, G, B, A))
             elif twoTag == QOI_OP_LUMA:
                 dG = (byte & 0x3f) - 32
                 byte = qoi[j]
@@ -99,24 +95,19 @@ def decode_qoi(qoi: bytes, debug=False) -> QoiImage:
                 R = (R + dRdG + dG) & 0xff
                 G = (G + dG) & 0xff
                 B = (B + dBdG + dG) & 0xff
-                if debug: print(twoTag, i, byte, (dG, dRdG, dBdG), (R, G, B, A))
             else: # QOI_OP_RUN
                 n = (byte & 0x3f) + 1
                 for k in range(n):
                     acc.data[i + k] = u32(R, G, B, A)
-                if debug: print(twoTag, f"{i}-{i+n-1}")
                 seen[qoi_hash(R, G, B, A)] = u32(R, G, B, A)
                 i += n
                 continue
         acc.data[i] = u32(R, G, B, A)
         seen[qoi_hash(R, G, B, A)] = u32(R, G, B, A)
         i += 1
-    if debug:
-        acc.print(0, 0, 16)
-        acc.print(0, 1, 16)
     return acc
 
-def read_qoi(path: str, debug=False) -> QoiImage:
+def read_qoi(path: str) -> QoiImage:
     with open(path, "rb") as f:
         return decode_qoi(f.read())
 
@@ -125,7 +116,7 @@ def smallest_difference_u8(b: int, a: int) -> int:
     d2 = d1 - 256
     return lerp(d1 >= 128, d1, d2)
 
-def encode_qoi(image: QoiImage, debug=False) -> bytes:
+def encode_qoi(image: QoiImage) -> bytes:
     # header
     acc = b""
     acc += b"qoif"
@@ -138,9 +129,6 @@ def encode_qoi(image: QoiImage, debug=False) -> bytes:
     seen = [0] * 64
     R, G, B, A = 0, 0, 0, 255
     i = 0
-    if debug:
-        image.print(0, 0, 16)
-        image.print(0, 1, 16)
     while i < len(image.data):
         # QOI_OP_RUN
         if u32(R, G, B, A) == image.data[i]:
@@ -148,10 +136,8 @@ def encode_qoi(image: QoiImage, debug=False) -> bytes:
             for n in range(62):
                 if i + n + 1 >= len(image.data) or u32(R, G, B, A) != image.data[i + n + 1]:
                     break
-            if debug: print(QOI_OP_RUN, f"{i}-{i+n}")
             acc += encode_u8((QOI_OP_RUN << 6) + n)
             i += n + 1
-            if debug: print(f"{acc[-1]:08b}")
             continue
 
         newR, newG, newB, newA = RGBA(image.data[i])
@@ -160,14 +146,12 @@ def encode_qoi(image: QoiImage, debug=False) -> bytes:
             dR, dG, dB = smallest_difference_u8(newR, R), smallest_difference_u8(newG, G), smallest_difference_u8(newB, B)
             j = qoi_hash(newR, newG, newB, newA)
             if seen[j] == image.data[i]:
-                if debug: print(QOI_OP_INDEX, i, RGBA(seen[j]))
                 acc += encode_u8((QOI_OP_INDEX << 6) + j)
                 break
             seen[j] = image.data[i]
 
             # QOI_OP_RGBA
             if newA != A:
-                if debug: print(QOI_OP_RGBA, i, (newR, newG, newB, newA))
                 acc += encode_u8(QOI_OP_RGBA)
                 acc += encode_u8(newR)
                 acc += encode_u8(newG)
@@ -176,19 +160,16 @@ def encode_qoi(image: QoiImage, debug=False) -> bytes:
                 break
             # QOI_OP_DIFF
             if (-2 <= dR <= 1) and (-2 <= dG <= 1) and (-2 <= dB <= 1):
-                if debug: print(QOI_OP_DIFF, i, (newR, newG, newB, newA), (dR, dG, dB))
                 acc += encode_u8((QOI_OP_DIFF << 6) + ((dR + 2) << 4) + ((dG + 2) << 2) + (dB + 2))
                 break
             # QOI_OP_LUMA
             dRdG = smallest_difference_u8(dR, dG)
             dBdG = smallest_difference_u8(dB, dG)
             if (-32 <= dG <= 31) and (-8 <= dRdG <= 7) and (-8 <= dBdG <= 7):
-                if debug: print(QOI_OP_LUMA, i, (newR, newG, newB, newA), (dG, dRdG, dBdG))
                 acc += encode_u8((QOI_OP_LUMA << 6) + (dG + 32))
                 acc += encode_u8(((dRdG + 8) << 4) + (dBdG + 8))
                 break
             # QOI_OP_RGB
-            if debug: print(QOI_OP_RGB, i, (newR, newG, newB, newA))
             acc += encode_u8(QOI_OP_RGB)
             acc += encode_u8(newR)
             acc += encode_u8(newG)
@@ -196,9 +177,8 @@ def encode_qoi(image: QoiImage, debug=False) -> bytes:
             break
         R, G, B, A = newR, newG, newB, newA
         i += 1
-        if debug: print({k: RGBA(seen[k]) for k in range(64) if seen[k] != 0})
     return acc
 
-def write_qoi(path: str, image: QoiImage, debug=False):
+def write_qoi(path: str, image: QoiImage):
     with open(path, "wb+") as f:
-        f.write(encode_qoi(image, debug=debug))
+        f.write(encode_qoi(image))
