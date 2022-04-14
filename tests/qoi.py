@@ -133,15 +133,14 @@ def testEncodeQoiIsReversible():
     assertImageMatches(decode_qoi(encode_qoi(pixelTest.image)), pixelTest.image)
     assertImageMatches(decode_qoi(encode_qoi(coverageTest.image)), coverageTest.image)
 
-def assertReadWriteQoi(path: str, testCase: TestCase):
+def assertWriteAndReadQoi(path: str, testCase: TestCase):
     write_qoi(path, testCase.image)
-    image = read_qoi(path)
-    assertImageMatches(image, testCase.image)
+    assertImageMatches(read_qoi(path), testCase.image)
 
 @test
-def testReadWriteQoi():
-    assertReadWriteQoi(relative_path(__file__, "/data/pixelTest.qoi"), pixelTest)
-    assertReadWriteQoi(relative_path(__file__, "/data/coverageTest.qoi"), coverageTest)
+def testWriteAndReadQoi():
+    assertWriteAndReadQoi(relative_path(__file__, "/data/pixelTest.qoi"), pixelTest)
+    assertWriteAndReadQoi(relative_path(__file__, "/data/coverageTest.qoi"), coverageTest)
 
 if __name__ == "__main__":
     run_tests()
