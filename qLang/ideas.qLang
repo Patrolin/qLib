@@ -1,47 +1,51 @@
 // basic types
 int
-int(8)
-uint
-uint(1)
+i8
+i16
+i32
+i64
+u8
+u16
+u32
+u64
 float
-float(32)
+f32
+f64
 
 
 // structs
 struct Vec3 {
-  float(32) x, y, z
+    f32 x, y, z
+}
+struct Vec3 {
+    x, y, z: f32
 }
 
 // enums
-enum Zodiac {
-  ONE
-  TWO
+enum Foo {
+    ONE
+    TWO
 }
-
-enum Stuff {
-  ONE = 1
-  TWO = 2
+enum Foo {
+    ONE = 1
+    TWO = 2
 }
 
 
 // collections
 []
-LinkedList(T)?
 BucketArray(T, N)?
 Set(T)
-Dict(K, V)
+Map(K, V)
 
-// stack/data section
-uint x
-[n]uint arr
-
-// heap
-*uint x
-*[]uint arr
+//
+int x
+[n]int arr
 
 
 // loops
-for X {
+for arr print(it)
+for arr {
   print(it, it_index)
 }
 

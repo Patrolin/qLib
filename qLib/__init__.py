@@ -1,6 +1,4 @@
-from .colors import *
 from .diff import *
-from .integration import *
 from .iterables import *
 from .math import *
 from .qoi import *

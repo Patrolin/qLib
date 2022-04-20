@@ -126,3 +126,21 @@ phi4 = bisection_solve(1.0, 2.0, lambda x: x**5 - x - 1)
 
 f = lambda x: x**2 - x - 1
 phi1_mead = nelder_mead_1D(lambda x: (f(x) if x >= 1 else x - 2)**2, 1.0, 1 + 2 * epsilon)
+
+def wegsteins_fixed_point(x1: float, g: Callable[[float], float]) -> float:
+    # find a root x of f(x)
+    x2 = g(x1)
+    dx = 1.0
+    while True:
+        b = (x1 + g(x2) - x2 - g(x1))
+        if b != 0:
+            x3 = (x1 * g(x2) - x2 * g(x1)) / b
+            dx = x3 - x2
+        else:
+            x3 = x2 + dx
+        if x3 == x2:
+            return x3
+        x1 = x2
+        x2 = x3
+
+# TODO: n-dimensional optimization

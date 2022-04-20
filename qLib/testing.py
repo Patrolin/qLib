@@ -9,9 +9,9 @@ NO_COLOR = "\033[0m"
 
 tests: list[Callable] = []
 
-def test(f: Callable):
-    tests.append(f)
-    return f
+def test(callback: Callable):
+    tests.append(callback)
+    return callback
 
 def run_tests():
     passed = 0

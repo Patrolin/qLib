@@ -1,35 +1,31 @@
-
-*[]TestSuite test_suites = [{""}] // TODO: who allocates this?
-
-TestSuite {
-  str name
-  uint passed = 0
-  uint failed = 0
-  uint total() {
-    return self.passed + self.failed
-  }
-
-  enter() {
-    test_suites.append(this)
-  }
-  exit() {
-    test_suites.pop()
-  }
+enum TextColor {
+    RED   = "\033[0;31m"
+    GREEN = "\033[0;32m"
+    RESET = "\033[0m"
 }
 
-bool all(bool[] X) {
-  return reduce(X, true, acc & condition)
-}
+func[] tests = {}
 
-bool test([]bool conditions, bool quiet = false) {
-  bool passed = reduce(conditions, true, acc & it)
-  if passed {
-    for(test_suites, it.passed += 1)
-  } else {
-    for(test_suites, it.failed += 1)
-    if !quiet {
-      print("%#% failed:", [test_suites[1:].map(x => x.name).join('.'), test_suites[test_suites.len-1].total()])
-      print("value = %", conditions)
-    }
-  }
-}
+// decorator??
+func test(callback: func)
+    tests.append(callback)
+    return callback
+
+void run_tests():
+    passed = 0
+    failed = 0
+    for test in tests:
+        name = tprint("#% %", passed + failed + 1, test.__name__)
+        test()
+        try: // catch assert??
+            test()
+            print("%% passed%", TextColor.GREEN, name, TextColor.RESET)
+            passed += 1
+        except Exception:
+            print("%% failed:", TextColor.RED, name)
+            traceback.print_exc() // print exception??
+            print(TextColor.RESET)
+            failed += 1
+
+    print("    %tests: % passed % failed%", TextColor.GREEN if failed == 0 else TextColor.RED, passed, failed, TextColor.RESET)
+    exit(failed)
