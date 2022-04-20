@@ -1,11 +1,11 @@
 from typing import *
-from math import sin, remainder as rem, modf, hypot as L2
+from math import log, sin, remainder as rem, modf, hypot as L2
 
 # units
 e = 2.718281828459045
 tau = 6.283185307179586
-half_tau = tau / 2
-quarter_tau = half_tau / 2
+tauOver2 = tau / 2
+tauOver4 = tauOver2 / 2
 
 epsilon = 1e-6
 
@@ -32,7 +32,7 @@ def abs(x: float) -> float:
 def sign(x: float) -> int:
     return (x > 0) - (x < 0)
 
-def _sin(x: float, half_interval: float = half_tau) -> float:
+def _sin(x: float, half_interval: float = tauOver2) -> float:
     '''return sin(x * half_tau/half_interval) on [0, 1] for x on [-half_interval, half_interval]'''
     y = 4 / half_interval * x - 4 / half_interval**2 * x * abs(x)
     return y
@@ -40,11 +40,11 @@ def _sin(x: float, half_interval: float = half_tau) -> float:
 
 def sin(x: float) -> float:
     '''return sin(x) on [0, 1] for x on (-inf, inf)'''
-    return _sin(half_tau - (x % tau))
+    return _sin(tauOver2 - (x % tau))
 
 def cos(x: float) -> float:
     '''return cos(x) on [0, 1] for x on (-inf, inf)'''
-    return sin(x + quarter_tau)
+    return sin(x + tauOver4)
 
 # functions
 # a + b
@@ -58,9 +58,9 @@ def cos(x: float) -> float:
 
 def Gamma(x: int | float) -> float:
     '''return Gamma(x) in O(log n)'''
-    y = (2 * x + 1 / 3)**.5 * half_tau**.5 * x**x * e**(-x)
+    y = (2 * x + 1 / 3)**.5 * tauOver2**.5 * x**x * e**(-x)
     if x < 0:
-        return half_tau / (sin(half_tau * x) * y)
+        return tauOver2 / (sin(tauOver2 * x) * y)
     else:
         return y
 

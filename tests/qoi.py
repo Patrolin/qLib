@@ -1,4 +1,4 @@
-from qLib.qoi import decode_qoi, read_qoi, encode_qoi, write_qoi, QoiImage
+from qLib.qoi import decodeQuiteOK, readQuiteOK, encodeQuiteOK, writeQuiteOK, QoiImage
 from qLib import relative_path, test, run_tests
 
 def encode_u8(u8: int) -> bytes:
@@ -114,33 +114,33 @@ def assertBytesMatch(qoi1: bytes, qoi2: bytes):
         assert False, f"Extra bytes at {len(qoi2)+1}:\n    got: {printBytes(qoi1[len(qoi2)+1:])}"
 
 @test
-def testDecode():
-    assertImageMatches(decode_qoi(pixelTest.bytes), pixelTest.image)
-    assertImageMatches(decode_qoi(coverageTest.bytes), coverageTest.image)
+def testDecodeQuiteOK():
+    assertImageMatches(decodeQuiteOK(pixelTest.bytes), pixelTest.image)
+    assertImageMatches(decodeQuiteOK(coverageTest.bytes), coverageTest.image)
 
 @test
-def testEncode():
-    assertBytesMatch(encode_qoi(pixelTest.image), pixelTest.bytes)
-    assertBytesMatch(encode_qoi(coverageTest.image), coverageTest.bytes)
+def testEncodeQuiteOK():
+    assertBytesMatch(encodeQuiteOK(pixelTest.image), pixelTest.bytes)
+    assertBytesMatch(encodeQuiteOK(coverageTest.image), coverageTest.bytes)
 
 @test
-def testDecodeQoiIsReversible():
-    assertBytesMatch(encode_qoi(decode_qoi(pixelTest.bytes)), pixelTest.bytes)
-    assertBytesMatch(encode_qoi(decode_qoi(coverageTest.bytes)), coverageTest.bytes)
+def testDecodeQuiteOKIsReversible():
+    assertBytesMatch(encodeQuiteOK(decodeQuiteOK(pixelTest.bytes)), pixelTest.bytes)
+    assertBytesMatch(encodeQuiteOK(decodeQuiteOK(coverageTest.bytes)), coverageTest.bytes)
 
 @test
-def testEncodeQoiIsReversible():
-    assertImageMatches(decode_qoi(encode_qoi(pixelTest.image)), pixelTest.image)
-    assertImageMatches(decode_qoi(encode_qoi(coverageTest.image)), coverageTest.image)
+def testEncodeQuiteOKIsReversible():
+    assertImageMatches(decodeQuiteOK(encodeQuiteOK(pixelTest.image)), pixelTest.image)
+    assertImageMatches(decodeQuiteOK(encodeQuiteOK(coverageTest.image)), coverageTest.image)
 
-def assertWriteAndReadQoi(path: str, testCase: TestCase):
-    write_qoi(path, testCase.image)
-    assertImageMatches(read_qoi(path), testCase.image)
+def assertWriteAndReadQuiteOK(path: str, testCase: TestCase):
+    writeQuiteOK(path, testCase.image)
+    assertImageMatches(readQuiteOK(path), testCase.image)
 
 @test
-def testWriteAndReadQoi():
-    assertWriteAndReadQoi(relative_path(__file__, "/data/pixelTest.qoi"), pixelTest)
-    assertWriteAndReadQoi(relative_path(__file__, "/data/coverageTest.qoi"), coverageTest)
+def testWriteAndReadQuiteOK():
+    assertWriteAndReadQuiteOK(relative_path(__file__, "/data/pixelTest.qoi"), pixelTest)
+    assertWriteAndReadQuiteOK(relative_path(__file__, "/data/coverageTest.qoi"), coverageTest)
 
 if __name__ == "__main__":
     run_tests()

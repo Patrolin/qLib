@@ -1,6 +1,6 @@
-from qLib.math import lerp
+__all__ = ["decodeQuiteOK", "readQuiteOK", "encodeQuiteOK", "writeQuiteOK", "QoiImage"]
 
-__all__ = ["decode_qoi", "read_qoi", "encode_qoi", "write_qoi", "QoiImage"]
+from qLib.math import lerp
 
 def u32(R: int, G: int, B: int, A: int) -> int:
     return ((R << 24) + (G << 16) + (B << 8) + A)
@@ -44,10 +44,10 @@ QOI_OP_DIFF = 0b01
 QOI_OP_LUMA = 0b10
 QOI_OP_RUN = 0b11
 
-def qoi_hash(R: int, G: int, B: int, A: int) -> int:
+def quiteOKHash(R: int, G: int, B: int, A: int) -> int:
     return (R * 3 + G * 5 + B * 7 + A * 11) & 0x3f
 
-def decode_qoi(qoi: bytes) -> QoiImage:
+def decodeQuiteOK(qoi: bytes) -> QoiImage:
     # header
     assert qoi[0:4] == QoiImage.MAGIC
     width = decode_u32(qoi[4:8])
@@ -99,24 +99,24 @@ def decode_qoi(qoi: bytes) -> QoiImage:
                 n = (byte & 0x3f) + 1
                 for k in range(n):
                     acc.data[i + k] = u32(R, G, B, A)
-                seen[qoi_hash(R, G, B, A)] = u32(R, G, B, A)
+                seen[quiteOKHash(R, G, B, A)] = u32(R, G, B, A)
                 i += n
                 continue
         acc.data[i] = u32(R, G, B, A)
-        seen[qoi_hash(R, G, B, A)] = u32(R, G, B, A)
+        seen[quiteOKHash(R, G, B, A)] = u32(R, G, B, A)
         i += 1
     return acc
 
-def read_qoi(path: str) -> QoiImage:
+def readQuiteOK(path: str) -> QoiImage:
     with open(path, "rb") as f:
-        return decode_qoi(f.read())
+        return decodeQuiteOK(f.read())
 
 def smallest_difference_u8(b: int, a: int) -> int:
     d1 = (b - a) % 256
     d2 = d1 - 256
     return lerp(d1 >= 128, d1, d2)
 
-def encode_qoi(image: QoiImage) -> bytes:
+def encodeQuiteOK(image: QoiImage) -> bytes:
     # header
     acc = b""
     acc += b"qoif"
@@ -144,7 +144,7 @@ def encode_qoi(image: QoiImage) -> bytes:
         while 1:
             # QOI_OP_INDEX
             dR, dG, dB = smallest_difference_u8(newR, R), smallest_difference_u8(newG, G), smallest_difference_u8(newB, B)
-            j = qoi_hash(newR, newG, newB, newA)
+            j = quiteOKHash(newR, newG, newB, newA)
             if seen[j] == image.data[i]:
                 acc += encode_u8((QOI_OP_INDEX << 6) + j)
                 break
@@ -179,6 +179,6 @@ def encode_qoi(image: QoiImage) -> bytes:
         i += 1
     return acc
 
-def write_qoi(path: str, image: QoiImage):
+def writeQuiteOK(path: str, image: QoiImage):
     with open(path, "wb+") as f:
-        f.write(encode_qoi(image))
+        f.write(encodeQuiteOK(image))

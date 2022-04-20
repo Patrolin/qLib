@@ -1,3 +1,6 @@
+__all__ = ["LinkedList", "Set", "Map"]
+
 from collections import deque as LinkedList
 
-__all__ = ['LinkedList']
+Set = set
+Map = dict
