@@ -8,6 +8,6 @@ setup(
     packages=['qLib'],
     url='http://pypi.python.org/pypi/qLib',
     license='LICENSE.md',
-    description='A simple to use library',
+    description='A simple library',
     long_description=open('README.md').read(),
 )

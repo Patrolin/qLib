@@ -70,5 +70,8 @@ def parseRegex(regex: str) -> RegexNode:
             print(token)
     return root
 
+# TODO: construct (NFA ->)? DFA -> min-DFA at compile time in O(n^2)?
+# or just prevent the creation or execution of Evil Regexes?
+
 if __name__ == "__main__":
     print(parseRegex("(a)|(b)"))
