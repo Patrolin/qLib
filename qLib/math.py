@@ -1,5 +1,5 @@
-from typing import *
 from math import log, sin, remainder as rem, modf, hypot as L2
+from typing import Callable, overload
 
 # units
 e = 2.718281828459045

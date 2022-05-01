@@ -1,5 +1,5 @@
 from collections import UserList
-from typing import *
+from typing import overload, Optional, Union
 from .iterables import *
 from .math import *
 
