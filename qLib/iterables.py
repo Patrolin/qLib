@@ -99,7 +99,7 @@ class Map(BaseMap):
         if not self._fast_set(key, value):
             self._slow_set(key, value)
 
-    def __str__(self):
+    def __repr__(self):
         return "{" + ", ".join(f"{repr(key)}: {value}" for key, value in self) + "}"
 
 class Set(BaseMap):
@@ -109,3 +109,6 @@ class Set(BaseMap):
     def add(self, key):
         if not self._fast_set(key, None):
             self._slow_set(key, None)
+
+    def __repr__(self):
+        return "{" + ", ".join(repr(key) for key, value in self) + "}"
