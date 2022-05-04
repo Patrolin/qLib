@@ -1,4 +1,4 @@
-from math import log, sin, remainder as rem, modf, hypot as L2
+from math import log, sin, remainder as rem, modf, hypot as L2, floor, ceil
 from typing import Callable, overload
 
 # units
