@@ -13,14 +13,14 @@ def testMeanStdev():
 
 @test
 def testMode():
-    for arr, m in [\
+    for arr, acceptable_values in [\
         ([1], {1}),
         ([1, 2], {1, 2}),
         ([1, 1, 2], {1}),
         ([1, 2, 2], {2}),
         ([-1, -1, 0, 0, 1, 1, 2, 2, 2, 3], {2})
     ]:
-        assert modeOrZero(arr) in m
+        assert modeOrZero(arr) in acceptable_values, f"{arr} {acceptable_values}"
 
 if __name__ == "__main__":
     run_tests()

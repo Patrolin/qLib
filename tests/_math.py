@@ -1,4 +1,5 @@
-from qLib import *
+from qLib.tests import test, run_tests
+from qLib.math import e, tau, tauOver2, tauOver4, phi1, phi2, phi3, phi4
 
 @test
 def testMathConstants():

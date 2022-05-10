@@ -1,6 +1,5 @@
-from collections import UserList
-from typing import overload, Optional, Union
-from .iterables import *
+from typing import overload, Optional
+from .collections import *
 from .math import *
 
 # (sample mean, sample standard deviation)
@@ -43,10 +42,10 @@ def modeOrZero(X: list[int] | list[float]) -> float:
     for n in range(len(X) - 1, 0, -1):
         # remove farthest neighbor of the mean
         a, a_distance = A[0], abs(A[0] - u)
-        b, b_distance = A[-1], abs(A[-1] - u)
+        b, b_distance = A[A.count-1], abs(A[A.count-1] - u)
         if a_distance >= b_distance:
             u -= (a - u) / n
-            A.popleft()
+            A.popLeft()
         else:
             u -= (b - u) / n
             A.pop()
@@ -120,63 +119,6 @@ def pQuantile(X: list[float], p: float) -> Optional[float]:
         y = g.next(x)
     return y
 
-# visual analysis
-def equiprobable_histogram(X: list[float], bins: int, **kwargs):
-    g = PP(.5, bins + 1)
-    for x in X:
-        _ = g.next(x)
-    import matplotlib.pyplot as plt
-    from matplotlib.patches import Rectangle
-    fig, ax = plt.subplots()
-    for i in range(bins):
-        x1 = g.q[i]
-        x2 = g.q[i + 1]
-        ax.add_patch(Rectangle((x1, 0), x2 - x1, 1 / bins, edgecolor='black'))
-    # todo: use kwargs
-    ax.set(xlim=(g.q[0], g.q[-1]), title='Equiprobable histogram\n(normal distribution)', xlabel='x', ylabel='probability')
-    plt.show()
-
-class NamedList(UserList):
-    def __init__(self, name: str, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.name = name
-
-def sortedplot(*Y: Union[NamedList, list], **kwargs):
-    '''plot the Y as a sorted plot in O(n log n)'''
-
-    import matplotlib.pyplot as plt
-    LINESTYLES = [
-        (0, (3, 2, 3, 2, 3, 4)), # --- ---
-        (0, (1, 1, 1, 1, 1, 3)), # *** ***
-        (0, (3, 2, 1, 2, 3, 4)), # -*- -*-
-        (0, (1, 2, 1, 2, 3, 4)), # **- **-
-        (0, (1, 2, 3, 2, 1, 4)), # *-* *-*
-    ]
-    fig, ax = plt.subplots()
-    Y_named = [NamedList(y.name if isinstance(y, NamedList) else f'{i}', y) for i, y in enumerate(Y)]
-    Y_named = sorted(Y_named, key=lambda y: meanOrZero(y.data))
-
-    X = None
-    for i, y in enumerate(Y_named):
-        X = [j / (len(y) - 1) for j in range(len(y))]
-        ax.plot(X, sorted(y), linestyle=LINESTYLES[i % len(LINESTYLES)], linewidth=1.8, label=y.name)
-
-    p05 = [_quantile(sorted(y.data), 0.05) for y in Y_named]
-    p95 = [_quantile(sorted(y.data), 0.95) for y in Y_named]
-    kwargs_default = {
-        'title': 'Sorted plot',
-        'xlabel': 'p-quantile',
-        'ylabel': 'y',
-        'xticks': [0.05, 0.95],
-        'ylim': (min(p05), max(p95)),
-    }
-    for k, v in kwargs_default.items():
-        if k not in kwargs: kwargs[k] = v
-    ax.set(**kwargs)
-    ax.grid()
-    ax.legend(prop={'size': 12})
-    plt.show()
-
 if __name__ == '__main__':
     X = sorted([0, .24, .25, 1])
     print(modeOrZero(X), X)
@@ -186,23 +128,5 @@ if __name__ == '__main__':
     print(modeOrZero(X), X)
     print(meanOrZero(X), stdevOrZero(X, meanOrZero(X)))
 
-    #sortedplot([0.8, 1, 1.1], [0.75, 0.75, 0.75], X)
     Z = [0.02, 0.15, 0.74, 0.83, 3.39, 22.37, 10.15, 15.43, 38.62, 15.92, 34.60, 10.28, 1.47, 0.40, 0.05, 11.39, 0.27, 0.42, 0.09, 11.37]
     print(pQuantile(Z, 0.5)) # correct answer: 6.931, PP answer: 4.440634353260338, population median: 2.43
-
-    class FractalRand:
-        def __init__(self, seed: float):
-            self.x = seed
-
-        def next(self) -> float:
-            self.x = (self.x**2 + 1)**2 / (4 * self.x * (self.x**2 - 1))
-            y = self.x - sign(self.x)
-            import math
-            return y #/ (y + 1)
-
-    r = FractalRand(2)
-
-    X = []
-    for i in range(100000):
-        X.append(r.next())
-    sortedplot(NamedList('fractal_rand() [not normalized]', X))

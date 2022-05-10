@@ -1,6 +1,4 @@
-__all__ = ["LinkedList", "Set", "Map"]
-
-from collections import deque as LinkedList
+__all__ = ["Set", "Map"]
 from typing import Any, NamedTuple
 
 class MapSlot(NamedTuple):
@@ -15,6 +13,10 @@ class MapBucket:
 
     def __repr__(self):
         return "{" + ", ".join(f"{repr(slot.key)}: {slot.value}" for slot in self) + "}"
+
+    def __iter__(self):
+        for i in range(self.count):
+            yield self[i]
 
     def __getitem__(self, i):
         return self.slots[i]
@@ -48,10 +50,6 @@ class MapBucket:
         self[self.count - 1] = MapSlot(None, None)
         self.count -= 1
 
-    def __iter__(self):
-        for i in range(self.count):
-            yield self[i]
-
 class BaseMap:
     def __init__(self, bucket_count=10, slots_per_bucket=4):
         self.bucket_count = bucket_count
@@ -74,7 +72,7 @@ class BaseMap:
         self.bucket_count = new_bucket_count
         self.buckets = new_map.buckets
 
-    def _fast_set(self, key, value):
+    def _fast_set(self, key, value) -> bool:
         # https://en.wikipedia.org/wiki/List_of_hash_functions#Non-cryptographic_hash_functions
         return self.buckets[hash(key) % self.bucket_count].set(key, value)
 

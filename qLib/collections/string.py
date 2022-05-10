@@ -1,4 +1,12 @@
+__all__ = ["normalize", "string_similarity"]
 from qLib.math import log
+import unicodedata
+
+def normalize(string: str, case_sensitive = False, accent_sensitive = False, symbol_sensitive = False) -> str:
+    acc = unicodedata.normalize("NFD", string) if symbol_sensitive else unicodedata.normalize("NFKD", string)
+    acc = acc if accent_sensitive else "".join(v for v in acc if not unicodedata.combining(v))
+    acc = acc if case_sensitive else acc.lower()
+    return acc
 
 def string_similarity(filter: str, option: str) -> float:
     '''return a string similarity of value, option in O(len(filter) + len(option))'''
@@ -23,17 +31,6 @@ def string_similarity(filter: str, option: str) -> float:
 
     if (bad_mismatches + okay_mismatches) == 0: return 1.0
     return (2 * matches / length_sum) / log(1 + bad_mismatches + okay_mismatches / 2)
-
-def filter_options(filter: str, options: list[str], cutoff: float = 0.1) -> list[str]:
-    '''return options filtered and sorted by string_similarity() in O((len(filter) + len(option)) * len(options))'''
-    acc = []
-    acc_similarities = dict()
-    for option in options:
-        similarity = string_similarity(filter, option)
-        if similarity >= cutoff:
-            acc.append(option)
-            acc_similarities[option] = similarity
-    return sorted(acc, key=lambda option: acc_similarities[option], reverse=True)
 
 # other options:
 # https://handwiki.org/wiki/Gestalt_Pattern_Matching

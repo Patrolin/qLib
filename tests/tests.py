@@ -1,13 +1,13 @@
 from qLib import *
 
 @test
-def testAssertTrue():
+def testPassTest():
     assert True
 
 if __name__ == "__main__":
 
     @test
-    def testAssertFalse():
+    def testFailTest():
         assert False
 
     @test
