@@ -1,5 +1,5 @@
-from _collections import *
-from _math import *
+from collections_ import *
+from math_ import *
 from qoi import *
 from statistics import *
 from tests import *
