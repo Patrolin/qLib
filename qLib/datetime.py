@@ -1,3 +1,5 @@
+__all__ = ["Duration", "DateTime"]
+
 from qLib.math import floor
 
 def isLeapYear(year):
@@ -45,8 +47,11 @@ def gregorianSecondToDate(gregorianSecond):
 # TODO: Locale
 #GREGORIAN_CALENDAR_EPOCH_YEAR = 1583 # Gregorian calendar Epoch = October 1582
 #TAI_EPOCH_YEAR = 1958
-POSIX_EPOCH_YEAR = 1970 # POSIX doesn't define what a second is, so people just slow down/speed up time whenever a leap seconds happens to make computations easier, therefore time is always broken past the previous leap second
-UTC_EPOCH_YEAR = 1972 # UTC = TAI + N leap seconds + 10 unlisted leap seconds
+# POSIX doesn't define what a second is, so people just slow down/speed up time
+# whenever a leap seconds happens to make computations easier,
+# therefore time is always broken past the previous leap second
+POSIX_EPOCH_YEAR = 1970
+UTC_EPOCH_YEAR = 1972 # UTC = TAI + (N leap seconds) + (10 unlisted leap seconds)
 
 class Duration:
     def __init__(self, years, months, days, h, m, s, ms):

@@ -1,4 +1,5 @@
-from math import log, sin, remainder as rem, modf, hypot as L2, floor, ceil
+from math import isqrt, log, sin, hypot as L2
+from math import remainder as rem, modf, floor, ceil
 from typing import Callable, overload
 
 # units
@@ -144,3 +145,15 @@ def wegsteins_fixed_point(x1: float, g: Callable[[float], float]) -> float:
         x2 = x3
 
 # TODO: n-dimensional optimization
+
+# Complex, # https://mathworld.wolfram.com/ComplexExponentiation.html / complex instructions?
+# Vector, Matrix?
+
+# https://en.wikipedia.org/wiki/Category:Numerical_integration_(quadrature)
+#     [-1, 1] https://en.wikipedia.org/wiki/Gauss–Legendre_quadrature
+#    [0, inf) https://en.wikipedia.org/wiki/Gauss–Laguerre_quadrature
+# (-inf, inf) https://en.wikipedia.org/wiki/Gauss–Hermite_quadrature
+#      (a, b) https://en.wikipedia.org/wiki/Newton–Cotes_formulas
+#     (-1, 1) https://en.wikipedia.org/wiki/Tanh-sinh_quadrature
+#     (-1, 1) https://en.wikipedia.org/wiki/Gauss–Jacobi_quadrature
+#     (-1, 1) https://en.wikipedia.org/wiki/Chebyshev–Gauss_quadrature
