@@ -1,6 +1,6 @@
 __all__ = ["Duration", "DateTime"]
 
-from qLib.math import floor
+from qLib.math_ import floor
 
 def isLeapYear(year):
     return ((year % 4) == 0) - ((year % 100) == 0) + ((year % 400) == 0)
@@ -40,9 +40,8 @@ def gregorianSecondToDate(gregorianSecond):
     second = floor(accSeconds)
     accSeconds -= second
     ms = accSeconds * 1000
-    return [yearMinusOne + 1, monthMinusOne + 1, dayMinusOne + 1, hour, minute, second, ms]
+    return [yearMinusOne + 1, monthMinusOne + 1, dayMinusOne + 1, hour, minute, second, ms, dayMinusOne % 7]
 
-# TODO: weekday
 # TODO: https://www.timeanddate.com/time/zones/
 # TODO: Locale
 #GREGORIAN_CALENDAR_EPOCH_YEAR = 1583 # Gregorian calendar Epoch = October 1582
@@ -104,16 +103,18 @@ class DateTime:
         return self.gregorianSecond - dateToGregorianSecond(POSIX_EPOCH_YEAR)
 
     def __repr__(self):
-        [year, month, day, h, m, s, ms] = gregorianSecondToDate(self.gregorianSecond)
+        [year, month, day, h, m, s, ms, weekday] = gregorianSecondToDate(self.gregorianSecond)
         dateString = f"{year:04}-{month:02}-{day:02}"
-        timeString = f"T{h:02}:{m:02}:{s:02}Z" if (year >= UTC_EPOCH_YEAR) else ""
-        return f"{dateString}{timeString}"
+        timeString = f"T{h:02}:{m:02}:{s:02}" if (year >= UTC_EPOCH_YEAR) else ""
+        msString = f".{floor(ms):03}" if ms > 0 else ""
+        timezoneString = "Z" if (year > UTC_EPOCH_YEAR) else ""
+        return f"{dateString}{timeString}{msString}{timezoneString}"
 
     def toHistoricString(self):
         [year, *_] = gregorianSecondToDate(self.gregorianSecond)
         return f"{year} AD" if (year > 0) else f"{1-year} BC"
 
 if __name__ == "__main__":
-    d = DateTime(2022, 4, 9, 13, 37, 59, 999)
+    d = DateTime(2022, 5, 14, 19, 23, 59, 999)
     print(d)
     print(d.toHistoricString())

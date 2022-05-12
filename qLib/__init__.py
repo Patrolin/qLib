@@ -1,10 +1,10 @@
 from .datetime import *
-from .math import *
+from .math_ import *
 from .qoi import *
 from .statistics import *
 from .tests import *
 from .vtcodes import *
-from .collections import *
+from .collections_ import *
 
 def relative_path(prefix: str, suffix: str) -> str:
     BACKSLASH = "\\"

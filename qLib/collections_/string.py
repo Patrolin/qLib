@@ -1,5 +1,5 @@
 __all__ = ["normalize", "string_similarity"]
-from qLib.math import log
+from qLib.math_ import log
 import unicodedata
 
 def normalize(string: str, case_sensitive = False, accent_sensitive = False, symbol_sensitive = False) -> str:

@@ -1,6 +1,6 @@
 from typing import overload, Optional
-from .collections import *
-from .math import *
+from .collections_ import *
+from .math_ import *
 
 # (sample mean, sample standard deviation)
 @overload
@@ -42,7 +42,7 @@ def modeOrZero(X: list[int] | list[float]) -> float:
     for n in range(len(X) - 1, 0, -1):
         # remove farthest neighbor of the mean
         a, a_distance = A[0], abs(A[0] - u)
-        b, b_distance = A[A.count-1], abs(A[A.count-1] - u)
+        b, b_distance = A[A.count - 1], abs(A[A.count - 1] - u)
         if a_distance >= b_distance:
             u -= (a - u) / n
             A.popLeft()

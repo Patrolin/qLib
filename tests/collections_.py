@@ -1,5 +1,5 @@
 from qLib.tests import test, run_tests
-from qLib.collections import normalize, string_similarity, Set, Map
+from qLib.collections_ import normalize, string_similarity, Set, Map
 from typing import NamedTuple, Callable
 
 class NormalizeTest(NamedTuple):

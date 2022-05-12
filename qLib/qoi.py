@@ -1,6 +1,6 @@
 __all__ = ["decodeQuiteOK", "readQuiteOK", "encodeQuiteOK", "writeQuiteOK", "QoiImage"]
 
-from qLib.math import lerp
+from qLib.math_ import lerp
 
 def u32(R: int, G: int, B: int, A: int) -> int:
     return ((R << 24) + (G << 16) + (B << 8) + A)
