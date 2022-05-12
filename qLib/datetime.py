@@ -52,6 +52,25 @@ def gregorianSecondToDate(gregorianSecond):
 POSIX_EPOCH_YEAR = 1970
 UTC_EPOCH_YEAR = 1972 # UTC = TAI + (N leap seconds) + (10 unlisted leap seconds)
 
+class DateTime:
+    def __init__(self, year, month=1, day=1, hour=0, minute=0, second=0, ms=0):
+        self.gregorianSecond = dateToGregorianSecond(year, month, day, hour, minute, second, ms)
+
+    def toUTCTimeStamp(self):
+        return self.gregorianSecond - dateToGregorianSecond(POSIX_EPOCH_YEAR)
+
+    def __repr__(self):
+        [year, month, day, h, m, s, ms, weekday] = gregorianSecondToDate(self.gregorianSecond)
+        dateString = f"{year:04}-{month:02}-{day:02}"
+        timeString = f"T{h:02}:{m:02}:{s:02}" if (year >= UTC_EPOCH_YEAR) else ""
+        msString = f".{floor(ms):03}" if ms > 0 else ""
+        timezoneString = "Z" if (year > UTC_EPOCH_YEAR) else ""
+        return f"{dateString}{timeString}{msString}{timezoneString}"
+
+    def toHistoricString(self):
+        [year, *_] = gregorianSecondToDate(self.gregorianSecond)
+        return f"{year} AD" if (year > 0) else f"{1-year} BC"
+
 class Duration:
     def __init__(self, years, months, days, h, m, s, ms):
         [self.years, self.months, self.days, self.h, self.m, self.s, self.ms] = [years, months, days, h, m, s, ms]
@@ -94,25 +113,6 @@ class Duration:
         acc += f"{self.s} s " if (self.s != 0) else ""
         acc += f"{self.ms} ms " if (self.ms != 0) else ""
         return acc[:-1]
-
-class DateTime:
-    def __init__(self, year, month=1, day=1, hour=0, minute=0, second=0, ms=0):
-        self.gregorianSecond = dateToGregorianSecond(year, month, day, hour, minute, second, ms)
-
-    def toUTCTimeStamp(self):
-        return self.gregorianSecond - dateToGregorianSecond(POSIX_EPOCH_YEAR)
-
-    def __repr__(self):
-        [year, month, day, h, m, s, ms, weekday] = gregorianSecondToDate(self.gregorianSecond)
-        dateString = f"{year:04}-{month:02}-{day:02}"
-        timeString = f"T{h:02}:{m:02}:{s:02}" if (year >= UTC_EPOCH_YEAR) else ""
-        msString = f".{floor(ms):03}" if ms > 0 else ""
-        timezoneString = "Z" if (year > UTC_EPOCH_YEAR) else ""
-        return f"{dateString}{timeString}{msString}{timezoneString}"
-
-    def toHistoricString(self):
-        [year, *_] = gregorianSecondToDate(self.gregorianSecond)
-        return f"{year} AD" if (year > 0) else f"{1-year} BC"
 
 if __name__ == "__main__":
     d = DateTime(2022, 5, 14, 19, 23, 59, 999)
