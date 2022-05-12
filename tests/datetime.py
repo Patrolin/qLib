@@ -20,7 +20,6 @@ def testDateTime():
         DateTimeTest([1970, 12, 31, 0, 0, 0, 0], 62167046400, (1970, 12, 31, 0, 0, 0, 0, 6)),
         DateTimeTest([1971, 1, 1 - 1, 0, 0, 0, 0], 62167046400, (1970, 12, 31, 0, 0, 0, 0, 6)),
         DateTimeTest([1971, 1 - 1, 31, 0, 0, 0, 0], 62167046400, (1970, 12, 31, 0, 0, 0, 0, 6)),
-        # complex modifications
         DateTimeTest([1970, 12 + 1, 1 - 1, 23, 0, 0, 0], 62167129200, (1970, 13, 0, 23, 0, 0, 0, 0)),
     ]
     for (date, gregorianSecond, expectedParts) in tests:
