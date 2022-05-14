@@ -6,7 +6,7 @@ class MapSlot(NamedTuple):
     value: Any
 
 class MapBucket:
-    def __init__(self, slot_count=10):
+    def __init__(self, slot_count: int):
         self.count = 0
         self.slot_count = slot_count
         self.slots: list[MapSlot] = [MapSlot(None, None)] * slot_count
