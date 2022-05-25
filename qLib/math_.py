@@ -33,6 +33,13 @@ def abs(x: float) -> float:
 def sign(x: float) -> int:
     return (x > 0) - (x < 0)
 
+def ilog10(x: int) -> int:
+    acc = 0
+    while x > 0:
+        x = x // 10
+        acc += 1
+    return acc
+
 def _sin(x: float, half_interval: float = tauOver2) -> float:
     '''return sin(x * half_tau/half_interval) on [0, 1] for x on [-half_interval, half_interval]'''
     y = 4 / half_interval * x - 4 / half_interval**2 * x * abs(x)

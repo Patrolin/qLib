@@ -1,4 +1,5 @@
 import struct
+from qLib.math_ import ilog10
 
 # you only really need top-level groups without backtracking in regex anyway, so you might as well just write the code yourself
 def indexOrMinusOne(string: str, substring: str) -> int:
@@ -25,9 +26,12 @@ def parseInt(string: str, base=10) -> tuple[int, int]:
         i += 1
     return acc, i
 
+# struct float32 { u1 sign, u8 exponent, u23 mantissa }
+# exponent (zero/subnormal = 0, normal = 1..254, inf/NaN = 255), stored with bias of 127
 def parseFloat32(string: str) -> tuple[float, int]:
+    # TODO: zero/subnormal, inf/NaN, 1e10 scientific notation
     acc = 0x00_00_00_00
-    exponent = 0 # exponent (zero/subnormal = 0, normal = 1..254, inf/NaN = 255), exponent_byte = exponent - 127
+    exponent = 0
     integer = 0
     fraction = 0
     i = 0
@@ -45,9 +49,12 @@ def parseFloat32(string: str) -> tuple[float, int]:
             integer = integer * 10 + j
             base10_digits += 1
         i += 1
+    exponent_offset = integer.bit_length() - 1
+    integer_offset = 23 - exponent_offset
+    exponent += exponent_offset
+    integer = integer << integer_offset
+    #print("integer part:   ", string, f"{acc + ((exponent + 127) << 23) + (integer & 0x7f_ff_ff):032b}")
 
-    while integer < 2**23:
-        integer = (integer << 1) # TODO: what
     if i < len(string) and string[i] == ".":
         i += 1
         while True:
@@ -60,12 +67,16 @@ def parseFloat32(string: str) -> tuple[float, int]:
                 fraction = fraction * 10 + j
                 base10_digits += 1
             i += 1
-    while integer < 2**23:
-        bit = 0 # TODO: fractional bits
-        fraction = (fraction << 1)
-        integer = (integer << 1) + bit
+    divisor = 10**ilog10(fraction)
+    #print("integer_offset:", integer_offset, divisor)
+    for j in range(1, integer_offset + 1):
+        #print("fraction:", fraction, fraction << 1, int(fraction >= divisor), (fraction << 1) - (fraction >= divisor) * divisor)
+        fraction = fraction << 1
+        bit = (fraction >= divisor)
+        fraction -= bit * divisor
+        integer += bit << (integer_offset - j)
+    #print("fractional part:", string, f"{acc + ((exponent + 127) << 23) + (integer & 0x7f_ff_ff):032b}")
 
-    print(acc, exponent, integer)
     acc = acc + ((exponent + 127) << 23) + (integer & 0x7f_ff_ff)
     return struct.unpack("f", acc.to_bytes(4, "little"))[0], i
 
