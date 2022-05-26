@@ -22,7 +22,7 @@ def parseInt(string: str, base=10) -> tuple[int, int]:
         j = indexOrMinusOne(DIGITS[:base], string[i])
         if j < 0:
             break
-        acc = acc * base + j
+        acc = acc * base + j # TODO: saturate on overflow
         i += 1
     return acc, i
 
@@ -35,9 +35,12 @@ def parseFloat32(string: str) -> tuple[float, int]:
     integer = 0
     fraction = 0
     i = 0
+    # sign
     if i < len(string) and string[i] == "-":
         acc ^= 0x80_00_00_00
         i += 1
+
+    # integer
     base10_digits = 0
     while True:
         if i >= len(string):
@@ -53,8 +56,16 @@ def parseFloat32(string: str) -> tuple[float, int]:
     integer_offset = 23 - exponent_offset
     exponent += exponent_offset
     integer = integer << integer_offset
+
+    # zero
+    if integer == 0:
+        exponent = -127
+    if i == 0:
+        exponent = 0
+        integer = 0
     #print("integer part:   ", string, f"{acc + ((exponent + 127) << 23) + (integer & 0x7f_ff_ff):032b}")
 
+    # fraction
     if i < len(string) and string[i] == ".":
         i += 1
         while True:
@@ -68,17 +79,30 @@ def parseFloat32(string: str) -> tuple[float, int]:
                 base10_digits += 1
             i += 1
     divisor = 10**ilog10(fraction)
-    #print("integer_offset:", integer_offset, divisor)
     for j in range(1, integer_offset + 1):
-        #print("fraction:", fraction, fraction << 1, int(fraction >= divisor), (fraction << 1) - (fraction >= divisor) * divisor)
         fraction = fraction << 1
         bit = (fraction >= divisor)
         fraction -= bit * divisor
         integer += bit << (integer_offset - j)
-    #print("fractional part:", string, f"{acc + ((exponent + 127) << 23) + (integer & 0x7f_ff_ff):032b}")
-
     acc = acc + ((exponent + 127) << 23) + (integer & 0x7f_ff_ff)
-    return struct.unpack("f", acc.to_bytes(4, "little"))[0], i
+    acc_float = struct.unpack("f", acc.to_bytes(4, "little"))[0]
+    #print("fractional part:", string, f"{acc:032b}", acc_float)
+
+    # base10 exponent
+    if i < len(string) and string[i] == "e":
+        i += 1
+        base10_exponent_sign = 1
+        if i < len(string) and string[i] == "-":
+            i += 1
+            base10_exponent_sign = -1
+        base10_exponent, j = parseInt(string[i:])
+        if j > 0:
+            i += j
+            acc_float *= 10.0**(base10_exponent_sign * base10_exponent)
+        else:
+            return acc_float, -i
+
+    return acc_float, i
 
 def parseString(string: str) -> tuple[str, int]:
     if len(string) == 0 or string[0] != "\"":
@@ -107,10 +131,18 @@ def parseString(string: str) -> tuple[str, int]:
             i += 1
 
 if __name__ == "__main__":
-    print(parseInt("123a"))
-    print(parseFloat32("1"))
-    print(parseFloat32("1456"))
-    print(parseFloat32("1.25"))
-    print(parseString("\"12345.7\\u012"))
-    print(parseString("\"12345.7\""))
-    print(parseString("\"123\\\"45.7\""))
+    print(parseString("\"12345.7\"")) # "12345.7"
+    print(parseString("\"123\\\"45.7\"")) # "123\"45.7"
+    print(parseString("\"12345.7\\u0123")) # "12345.7ģ"
+    print(parseString("\"12345.7\\u012")) # "12345.7"
+    print(parseInt("1234a")) # 1234
+    print(parseFloat32("1")) # 1.0
+    print(parseFloat32("1.")) # 1.0
+    print(parseFloat32("1.0")) # 1.0
+    print(parseFloat32("0")) # 0.0
+    print(parseFloat32("0.")) # 0.0
+    print(parseFloat32("0.0")) # 0.0
+    print(parseFloat32("e2")) # 100.0
+    print(parseFloat32("1234")) # 1234.0
+    print(parseFloat32("1.34")) # 1.3399999141693115
+    print(parseFloat32("1.34e2")) # 133.99999141693115
