@@ -131,11 +131,11 @@ def parseFloat(string: str, exponent_bits: int, mantissa_bits: int) -> tuple[flo
 
     # zero
     if mantissa == 0:
-        exponent = -HALF_MAX_EXPONENT
+        exponent = -HALF_MAX_EXPONENT # 0.0
 
     # base10 exponent
     if (i == 0) or ((i == 1) and string[0] == "-"):
-        exponent = 0
+        exponent = 0 # 1.0 by default
     acc = acc + ((exponent + HALF_MAX_EXPONENT) << mantissa_bits) + (mantissa & MANTISSA_MASK)
     acc_float = UNPACK(acc)
     #print("fractional part:", string, f"{exponent + HALF_MAX_EXPONENT:08b}", f"{mantissa & MANTISSA_MASK:023b}", f"{acc:032b}", acc_float)

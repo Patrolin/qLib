@@ -28,15 +28,16 @@ def lerp(t: bool | float, x: int | float, y: int | float) -> int | float:
     return x * (1 - t) + y * t
 
 def abs(x: float) -> float:
-    return lerp(float(x < 0), x, -x)
+    return lerp((x < 0), x, -x)
 
-def sign(x: float) -> int:
+def sign(x: float | int) -> int:
     return (x > 0) - (x < 0)
 
-def ilog10(x: int) -> int:
+def ilog10(n: int) -> int:
+    '''return ceil(log10(n)) in O(log n)'''
     acc = 0
-    while x > 0:
-        x = x // 10
+    while n > 0:
+        n = n // 10
         acc += 1
     return acc
 
