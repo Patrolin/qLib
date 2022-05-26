@@ -29,7 +29,7 @@ def parseInt(string: str, base=10) -> tuple[int, int]:
 # struct float32 { u1 sign, u8 exponent, u23 mantissa }
 # exponent (zero/subnormal = 0, normal = 1..254, inf/NaN = 255), stored with bias of 127
 def parseFloat32(string: str) -> tuple[float, int]:
-    # TODO: zero/subnormal, inf/NaN, 1e10 scientific notation
+    # TODO: zero/subnormal, inf/NaN
     acc = 0x00_00_00_00
     exponent = 0
     integer = 0
@@ -88,7 +88,7 @@ def parseFloat32(string: str) -> tuple[float, int]:
     acc_float = struct.unpack("f", acc.to_bytes(4, "little"))[0]
     #print("fractional part:", string, f"{acc:032b}", acc_float)
 
-    # base10 exponent
+    # base10 exponent # TODO: better accuracy
     if i < len(string) and string[i] == "e":
         i += 1
         base10_exponent_sign = 1
@@ -131,10 +131,10 @@ def parseString(string: str) -> tuple[str, int]:
             i += 1
 
 if __name__ == "__main__":
-    print(parseString("\"12345.7\"")) # "12345.7"
-    print(parseString("\"123\\\"45.7\"")) # "123\"45.7"
-    print(parseString("\"12345.7\\u0123")) # "12345.7ģ"
-    print(parseString("\"12345.7\\u012")) # "12345.7"
+    print(parseString("\"234.6\"")) # "234.6"
+    print(parseString("\"234\\\"78.0\"")) # "234\"78.0"
+    print(parseString("\"234.6\\u9012")) # "234.6递"
+    print(parseString("\"234.6\\u901")) # "234.6"
     print(parseInt("1234a")) # 1234
     print(parseFloat32("1")) # 1.0
     print(parseFloat32("1.")) # 1.0
@@ -143,6 +143,7 @@ if __name__ == "__main__":
     print(parseFloat32("0.")) # 0.0
     print(parseFloat32("0.0")) # 0.0
     print(parseFloat32("e2")) # 100.0
+    print(parseFloat32("e-2")) # 0.01
     print(parseFloat32("1234")) # 1234.0
     print(parseFloat32("1.34")) # 1.3399999141693115
     print(parseFloat32("1.34e2")) # 133.99999141693115
