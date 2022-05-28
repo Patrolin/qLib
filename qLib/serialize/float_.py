@@ -216,9 +216,9 @@ if __name__ == "__main__":
     print(printFloat32(-0.0)) # -0.
     print(printFloat32(123.4)) # 1.2e2
     print(printFloat32(0.375)) # 0.37
-    print(printFloat32(-parseFloat32("inf")[0])) # inf
-    print(printFloat32(_packFloat(0x7f_80_00_01, FLOAT32))) # should be -NaN(0b00000000000000000000001), but python is stupid
-    print(printFloat32(_packFloat(0x7f_c0_00_01, FLOAT32))) # -NaN(0b10000000000000000000001)
+    print(printFloat32(-parseFloat32("inf")[0])) # -inf
+    print(printFloat32(_packFloat(0x7f_80_00_01, FLOAT32))) # should be NaN(0b00000000000000000000001), but python is stupid
+    print(printFloat32(_packFloat(0x7f_c0_00_01, FLOAT32))) # NaN(0b10000000000000000000001)
     print(printFloat32(_packFloat(0xff_ff_ff_ff, FLOAT32))) # -NaN(0b11111111111111111111111)
     print(printFloat32(0.375)) # 0.37
     print()
