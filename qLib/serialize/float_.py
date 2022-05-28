@@ -154,7 +154,7 @@ def printFloat(float_: float, floatBits: FloatBits, base10_significant_digits=2)
     acc_fraction_string = ""
     nonzero_fraction = False
     for i in range((negative + (int_ == 0) + 1 + base10_significant_digits) - len(acc_string)):
-        acc = (acc % 1) * 10
+        acc = (acc * 10) % 10
         acc_fraction_string += DIGITS[int(acc)]
         nonzero_fraction |= int(acc) > 0
     if nonzero_fraction: acc_string += acc_fraction_string
@@ -210,6 +210,7 @@ if __name__ == "__main__":
     print(printFloat64(0.0)) # 0.
     print(printFloat64(-0.0)) # -0.
     print(printFloat64(1.0)) # 1.
+    print(printFloat64(1.2)) # 1.2
     print(printFloat64(12)) # 12.
     print(printFloat64(123.4)) # 1.2e2
     print(printFloat64(0.375)) # 0.37
