@@ -22,13 +22,16 @@ def _unpackFloat(float_: float, floatBits: FloatBits) -> int:
     return struct.unpack(UNPACK_FORMAT, struct.pack(PACK_FORMAT, float_))[0]
 
 def _EXPONENT_MASK(floatBits: FloatBits) -> int:
-    return ~((0xff_ff_ff_ff_ff_ff_ff_ff << floatBits.exponent) & 0xff_ff_ff_ff_ff_ff_ff_ff)
+    return (~(0xff_ff_ff_ff_ff_ff_ff_ff << floatBits.exponent)) & 0xff_ff_ff_ff_ff_ff_ff_ff
 
 def _MANTISSA_MASK(floatBits: FloatBits) -> int:
-    return ~((0xff_ff_ff_ff_ff_ff_ff_ff << floatBits.mantissa) & 0xff_ff_ff_ff_ff_ff_ff_ff)
+    return (~(0xff_ff_ff_ff_ff_ff_ff_ff << floatBits.mantissa)) & 0xff_ff_ff_ff_ff_ff_ff_ff
 
 def MAX_BASE10_SIGNIFICANT_DIGITS(floatBits: FloatBits) -> int:
     return 1 + ceil(floatBits.mantissa * log10(2))
+
+def _MAX_EXPONENT(floatBits: FloatBits) -> int:
+    return (1 << floatBits.exponent) - 1
 
 FLOAT32 = FloatBits(8, 23)
 FLOAT64 = FloatBits(11, 52)
@@ -39,7 +42,7 @@ FLOAT64 = FloatBits(11, 52)
 # exponent (zero/subnormal = 0, normal = 1..2046, inf/NaN = 2047), stored with bias of 1023
 
 def parseFloat(string: str, floatBits: FloatBits) -> tuple[float, int]:
-    MAX_EXPONENT = (1 << floatBits.exponent) - 1
+    MAX_EXPONENT = _MAX_EXPONENT(floatBits)
     HALF_MAX_EXPONENT = MAX_EXPONENT // 2
 
     acc = 0x00_00_00_00_00_00_00_00 # 64b
@@ -55,6 +58,7 @@ def parseFloat(string: str, floatBits: FloatBits) -> tuple[float, int]:
         acc = acc + (MAX_EXPONENT << floatBits.mantissa) # inf
         acc_float = _packFloat(acc, floatBits)
         return acc_float, i
+    # TODO: parse NAN(..)?
 
     # integer
     exponent = 0
@@ -135,11 +139,18 @@ def parseFloat64(string: str):
     return parseFloat(string, FLOAT64)
 
 def printFloat(float_: float, floatBits: FloatBits, base10_significant_digits=2) -> str:
+    # sign
     float_as_int = _unpackFloat(float_, floatBits)
     negative = float_as_int >> (floatBits.exponent + floatBits.mantissa)
     acc_string = "-" if negative else ""
     acc = -float_ if negative else float_
     if acc == 0.0: return acc_string + "0."
+
+    # inf/NaN
+    unsigned_exponent = (float_as_int >> floatBits.mantissa) & _EXPONENT_MASK(floatBits)
+    if unsigned_exponent == _MAX_EXPONENT(floatBits):
+        mantissa = float_as_int & _MANTISSA_MASK(floatBits)
+        return acc_string + ("inf" if (mantissa == 0) else f"NaN(0b{printInt(mantissa, 2).zfill(floatBits.mantissa)})")
 
     # scientific notation
     base10_exponent = floor(log10(acc))
@@ -204,6 +215,11 @@ if __name__ == "__main__":
     print(printFloat32(1.0)) # 1.
     print(printFloat32(-0.0)) # -0.
     print(printFloat32(123.4)) # 1.2e2
+    print(printFloat32(0.375)) # 0.37
+    print(printFloat32(-parseFloat32("inf")[0])) # inf
+    print(printFloat32(_packFloat(0x7f_80_00_01, FLOAT32))) # should be -NaN(0b00000000000000000000001), but python is stupid
+    print(printFloat32(_packFloat(0x7f_c0_00_01, FLOAT32))) # -NaN(0b10000000000000000000001)
+    print(printFloat32(_packFloat(0xff_ff_ff_ff, FLOAT32))) # -NaN(0b11111111111111111111111)
     print(printFloat32(0.375)) # 0.37
     print()
 
