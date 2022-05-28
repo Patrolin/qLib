@@ -1,40 +1,59 @@
-from math import remainder
 import struct
-from qLib.math_ import ilog10, log10, ceil
+from typing import NamedTuple
+from qLib.math_ import ilog10, log10, ceil, floor
 from qLib.serialize import indexOrMinusOne, DIGITS
 from qLib.serialize.int_ import parseInt, printInt
+
+class FloatBits(NamedTuple):
+    exponent: int
+    mantissa: int
+
+def _bytes_count(floatBits: FloatBits) -> int:
+    total_bits = (1 + floatBits.exponent + floatBits.mantissa)
+    return total_bits // 8 + ((total_bits % 8) > 0)
+
+def _packFloat(acc: int, floatBits: FloatBits) -> float:
+    PACK_FORMAT = "f" if _bytes_count(floatBits) <= 4 else "d"
+    return struct.unpack(PACK_FORMAT, acc.to_bytes(_bytes_count(floatBits), "little"))[0]
+
+def _unpackFloat(float_: float, floatBits: FloatBits) -> int:
+    PACK_FORMAT = "f" if _bytes_count(floatBits) <= 4 else "d"
+    UNPACK_FORMAT = "I" if _bytes_count(floatBits) <= 4 else "Q"
+    return struct.unpack(UNPACK_FORMAT, struct.pack(PACK_FORMAT, float_))[0]
+
+def _EXPONENT_MASK(floatBits: FloatBits) -> int:
+    return ~((0xff_ff_ff_ff_ff_ff_ff_ff << floatBits.exponent) & 0xff_ff_ff_ff_ff_ff_ff_ff)
+
+def _MANTISSA_MASK(floatBits: FloatBits) -> int:
+    return ~((0xff_ff_ff_ff_ff_ff_ff_ff << floatBits.mantissa) & 0xff_ff_ff_ff_ff_ff_ff_ff)
+
+def base10_significant_digits(floatBits: FloatBits) -> int:
+    return 1 + ceil(floatBits.mantissa * log10(2))
+
+FLOAT32 = FloatBits(8, 23)
+FLOAT64 = FloatBits(11, 52)
 
 # packed struct f32 { u1 sign, u8 exponent, u23 mantissa }
 # exponent (zero/subnormal = 0, normal = 1..254, inf/NaN = 255), stored with bias of 127
 # packed struct f64 { u1 sign, u11 exponent, u52 mantissa }
 # exponent (zero/subnormal = 0, normal = 1..2046, inf/NaN = 2047), stored with bias of 1023
 
-def significant_base10_digits(mantissa_bits: int) -> int:
-    return 1 + ceil(mantissa_bits * log10(2))
-
-def parseFloat(string: str, exponent_bits: int, mantissa_bits: int) -> tuple[float, int]:
-    def UNPACK(acc: int) -> float:
-        BYTES_COUNT = (1 + exponent_bits + mantissa_bits) // 8
-        UNPACK_FORMAT = "f" if BYTES_COUNT == 4 else "d"
-        return struct.unpack(UNPACK_FORMAT, acc.to_bytes(BYTES_COUNT, "little"))[0]
-
-    MAX_EXPONENT = (1 << exponent_bits) - 1
+def parseFloat(string: str, floatBits: FloatBits) -> tuple[float, int]:
+    MAX_EXPONENT = (1 << floatBits.exponent) - 1
     HALF_MAX_EXPONENT = MAX_EXPONENT // 2
-    SIGNIFICANT_BASE10_DIGITS = significant_base10_digits(mantissa_bits)
-    MANTISSA_MASK = ~(((0xff_ff_ff_ff_ff_ff_ff_ff << mantissa_bits) & 0xff_ff_ff_ff_ff_ff_ff_ff))
 
     acc = 0x00_00_00_00_00_00_00_00 # 64b
     i = 0
     # sign
     if i < len(string) and string[i] == "-":
-        acc ^= 1 << (exponent_bits + mantissa_bits)
+        acc ^= 1 << (floatBits.exponent + floatBits.mantissa)
         i += 1
 
     # infinity
     if (i + 2 < len(string)) and string[i] == "i" and string[i + 1] == "n" and string[i + 2] == "f":
         i += 3
-        acc = acc + (MAX_EXPONENT << mantissa_bits) # inf
-        acc_float = UNPACK(acc)
+        acc = acc + (MAX_EXPONENT << floatBits.mantissa) # inf
+        acc_float = _packFloat(acc, floatBits)
         return acc_float, i
 
     # integer
@@ -48,14 +67,14 @@ def parseFloat(string: str, exponent_bits: int, mantissa_bits: int) -> tuple[flo
         if j < 0:
             break
         i += 1
-        if base10_digits < SIGNIFICANT_BASE10_DIGITS:
+        if base10_digits < base10_significant_digits(floatBits):
             mantissa = mantissa * 10 + j
             base10_digits += 1
     exponent_offset = max(mantissa.bit_length() - 1, 0)
-    integer_offset = mantissa_bits - exponent_offset
+    integer_offset = floatBits.mantissa - exponent_offset
     exponent += exponent_offset
     mantissa = mantissa << integer_offset
-    #print("integer part:   ", string, f"{acc + ((exponent + HALF_MAX_EXPONENT) << mantissa_bits) + (mantissa & MANTISSA_MASK):032b}")
+    #print("integer part:   ", string, f"{acc + ((exponent + HALF_MAX_EXPONENT) << floatBits.mantissa) + (mantissa & _mantissaMask(floatBits)):032b}")
 
     # fraction
     fraction = 0
@@ -68,7 +87,7 @@ def parseFloat(string: str, exponent_bits: int, mantissa_bits: int) -> tuple[flo
             if j < 0:
                 break
             i += 1
-            if base10_digits < SIGNIFICANT_BASE10_DIGITS:
+            if base10_digits < base10_significant_digits(floatBits):
                 fraction = fraction * 10 + j
                 base10_digits += 1
     divisor = 10**ilog10(fraction)
@@ -91,8 +110,8 @@ def parseFloat(string: str, exponent_bits: int, mantissa_bits: int) -> tuple[flo
     # base10 exponent
     if (i == 0) or ((i == 1) and string[0] == "-"):
         exponent = 0 # 1.0 by default
-    acc = acc + ((exponent + HALF_MAX_EXPONENT) << mantissa_bits) + (mantissa & MANTISSA_MASK)
-    acc_float = UNPACK(acc)
+    acc = acc + ((exponent + HALF_MAX_EXPONENT) << floatBits.mantissa) + (mantissa & _MANTISSA_MASK(floatBits))
+    acc_float = _packFloat(acc, floatBits)
     #print("fractional part:", string, f"{exponent + HALF_MAX_EXPONENT:08b}", f"{mantissa & MANTISSA_MASK:023b}", f"{acc:032b}", acc_float)
     if i < len(string) and string[i] == "e":
         i += 1
@@ -110,35 +129,39 @@ def parseFloat(string: str, exponent_bits: int, mantissa_bits: int) -> tuple[flo
     return acc_float, i
 
 def parseFloat32(string: str):
-    return parseFloat(string, exponent_bits=8, mantissa_bits=23)
+    return parseFloat(string, FLOAT32)
 
 def parseFloat64(string: str):
-    return parseFloat(string, exponent_bits=11, mantissa_bits=52)
+    return parseFloat(string, FLOAT64)
 
-def printFloat(float_: float, mantissa_bits: int) -> str:
-    def PACK(float__: float):
-        PACK_FORMAT = "f" if (mantissa_bits == 23) else "d"
-        return struct.pack(PACK_FORMAT, float__)
-
-    BYTES_COUNT = 4 if (mantissa_bits == 23) else 8
-
-    # TODO: handle large exponents
-    int_ = int(float_)
-    negative = PACK(float_)[BYTES_COUNT - 1] >> 7
-    sign_string = "-" if negative else ""
-    acc_string = sign_string + printInt(abs(int_)) + "."
+def printFloat(float_: float, floatBits: FloatBits, base10_significant_digits=2) -> str:
+    float_as_int = _unpackFloat(float_, floatBits)
+    negative = float_as_int >> (floatBits.exponent + floatBits.mantissa)
+    exponent_unsigned = ((float_as_int >> floatBits.mantissa) & _EXPONENT_MASK(floatBits))
+    exponent = (exponent_unsigned + 128) % 256 - 128
     acc = -float_ if negative else float_
-    while len(acc_string) < negative + (int_ == 0) + 1 + significant_base10_digits(mantissa_bits):
+
+    # scientific notation
+    base10_exponent = floor(log10(acc)) if exponent != 0 else 0
+    base10_exponent_string = ""
+    if (base10_exponent >= base10_significant_digits) or (base10_exponent <= -base10_significant_digits):
+        acc = acc / (10**base10_exponent)
+        base10_exponent_string = "e" + printInt(base10_exponent)
+
+    # integer.fraction
+    int_ = int(acc)
+    sign_string = "-" if negative else ""
+    acc_string = sign_string + printInt(int_) + "."
+    while len(acc_string) < negative + (int_ == 0) + 1 + base10_significant_digits:
         acc = (acc % 1) * 10
-        acc_string += DIGITS[abs(int(acc))]
-    # TODO: shift mantissa +- 1?
-    return acc_string
+        acc_string += DIGITS[int(acc)]
+    return acc_string + base10_exponent_string
 
 def printFloat32(float_: float) -> str:
-    return printFloat(float_, 23)
+    return printFloat(float_, FLOAT32)
 
 def printFloat64(float_: float) -> str:
-    return printFloat(float_, 52)
+    return printFloat(float_, FLOAT64)
 
 if __name__ == "__main__":
     print(parseFloat32("inf")) # inf
@@ -175,16 +198,20 @@ if __name__ == "__main__":
     print(parseFloat64("-0.3")) # -0.3
     print()
 
-    print(printFloat32(1.0)) # 1.0000000
-    print(printFloat32(-0.0)) # 1.0000000
-    print(printFloat32(123.4)) # 123.40000
-    print(printFloat32(0.375)) # 0.37500000
+    print(printFloat32(1.0)) # 1.0
+    print(printFloat32(-0.0)) # -0.00
+    print(printFloat32(123.4)) # 1.2e2
+    print(printFloat32(0.375)) # 0.37
     print()
 
-    print(printFloat64(0.0)) # 1.0000000000000000
-    print(printFloat64(-0.0)) # 1.0000000000000000
-    print(printFloat64(1.0)) # 1.0000000000000000
-    print(printFloat64(123.4)) # 123.40000000000000
-    print(printFloat64(0.375)) # 0.3750000000000000
-    print(printFloat64(0.12345678901234566)) # 0.1234567890123456
-    print(printFloat64(-0.12345678901234566)) # -0.1234567890123456
+    print(printFloat64(0.0)) # 0.00
+    print(printFloat64(-0.0)) # -0.00
+    print(printFloat64(1.0)) # 1.0
+    print(printFloat64(123.4)) # 1.2e2
+    print(printFloat64(0.375)) # 0.37
+    print(printFloat64(0.12345678901234566)) # 0.12
+    print(printFloat64(-0.12345678901234566)) # -0.12
+    print(printFloat64(1e2)) # 1.0e2
+    print(printFloat64(1e-2)) # 1.0e-2
+    print(printFloat64(-1e6)) # -1.0e6
+    print(printFloat64(-1e-6)) # -1.0e-6
