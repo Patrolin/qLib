@@ -27,7 +27,7 @@ def _EXPONENT_MASK(floatBits: FloatBits) -> int:
 def _MANTISSA_MASK(floatBits: FloatBits) -> int:
     return ~((0xff_ff_ff_ff_ff_ff_ff_ff << floatBits.mantissa) & 0xff_ff_ff_ff_ff_ff_ff_ff)
 
-def base10_significant_digits(floatBits: FloatBits) -> int:
+def MAX_BASE10_SIGNIFICANT_DIGITS(floatBits: FloatBits) -> int:
     return 1 + ceil(floatBits.mantissa * log10(2))
 
 FLOAT32 = FloatBits(8, 23)
@@ -67,7 +67,7 @@ def parseFloat(string: str, floatBits: FloatBits) -> tuple[float, int]:
         if j < 0:
             break
         i += 1
-        if base10_digits < base10_significant_digits(floatBits):
+        if base10_digits < MAX_BASE10_SIGNIFICANT_DIGITS(floatBits):
             mantissa = mantissa * 10 + j
             base10_digits += 1
     exponent_offset = max(mantissa.bit_length() - 1, 0)
@@ -87,7 +87,7 @@ def parseFloat(string: str, floatBits: FloatBits) -> tuple[float, int]:
             if j < 0:
                 break
             i += 1
-            if base10_digits < base10_significant_digits(floatBits):
+            if base10_digits < MAX_BASE10_SIGNIFICANT_DIGITS(floatBits):
                 fraction = fraction * 10 + j
                 base10_digits += 1
     divisor = 10**ilog10(fraction)
@@ -215,3 +215,7 @@ if __name__ == "__main__":
     print(printFloat64(1e-2)) # 1.0e-2
     print(printFloat64(-1e6)) # -1.0e6
     print(printFloat64(-1e-6)) # -1.0e-6
+    print()
+
+    print(printFloat(-1e-6, FLOAT32, base10_significant_digits=MAX_BASE10_SIGNIFICANT_DIGITS(FLOAT32))) # -0.00000100
+    print(printFloat(-1e-6, FLOAT64, base10_significant_digits=MAX_BASE10_SIGNIFICANT_DIGITS(FLOAT64))) # -0.00000100000000000
