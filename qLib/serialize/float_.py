@@ -137,12 +137,12 @@ def parseFloat64(string: str):
 def printFloat(float_: float, floatBits: FloatBits, base10_significant_digits=2) -> str:
     float_as_int = _unpackFloat(float_, floatBits)
     negative = float_as_int >> (floatBits.exponent + floatBits.mantissa)
-    exponent_unsigned = ((float_as_int >> floatBits.mantissa) & _EXPONENT_MASK(floatBits))
-    exponent = (exponent_unsigned + 128) % 256 - 128
+    acc_string = "-" if negative else ""
     acc = -float_ if negative else float_
+    if acc == 0.0: return acc_string + "0."
 
     # scientific notation
-    base10_exponent = floor(log10(acc)) if exponent != 0 else 0
+    base10_exponent = floor(log10(acc))
     base10_exponent_string = ""
     if (base10_exponent >= base10_significant_digits) or (base10_exponent <= -base10_significant_digits):
         acc = acc / (10**base10_exponent)
@@ -150,11 +150,14 @@ def printFloat(float_: float, floatBits: FloatBits, base10_significant_digits=2)
 
     # integer.fraction
     int_ = int(acc)
-    sign_string = "-" if negative else ""
-    acc_string = sign_string + printInt(int_) + "."
-    while len(acc_string) < negative + (int_ == 0) + 1 + base10_significant_digits:
+    acc_string += printInt(int_) + "."
+    acc_fraction_string = ""
+    nonzero_fraction = False
+    for i in range((negative + (int_ == 0) + 1 + base10_significant_digits) - len(acc_string)):
         acc = (acc % 1) * 10
-        acc_string += DIGITS[int(acc)]
+        acc_fraction_string += DIGITS[int(acc)]
+        nonzero_fraction |= int(acc) > 0
+    if nonzero_fraction: acc_string += acc_fraction_string
     return acc_string + base10_exponent_string
 
 def printFloat32(float_: float) -> str:
@@ -198,23 +201,24 @@ if __name__ == "__main__":
     print(parseFloat64("-0.3")) # -0.3
     print()
 
-    print(printFloat32(1.0)) # 1.0
-    print(printFloat32(-0.0)) # -0.00
+    print(printFloat32(1.0)) # 1.
+    print(printFloat32(-0.0)) # -0.
     print(printFloat32(123.4)) # 1.2e2
     print(printFloat32(0.375)) # 0.37
     print()
 
-    print(printFloat64(0.0)) # 0.00
-    print(printFloat64(-0.0)) # -0.00
-    print(printFloat64(1.0)) # 1.0
+    print(printFloat64(0.0)) # 0.
+    print(printFloat64(-0.0)) # -0.
+    print(printFloat64(1.0)) # 1.
+    print(printFloat64(12)) # 12.
     print(printFloat64(123.4)) # 1.2e2
     print(printFloat64(0.375)) # 0.37
     print(printFloat64(0.12345678901234566)) # 0.12
     print(printFloat64(-0.12345678901234566)) # -0.12
-    print(printFloat64(1e2)) # 1.0e2
-    print(printFloat64(1e-2)) # 1.0e-2
-    print(printFloat64(-1e6)) # -1.0e6
-    print(printFloat64(-1e-6)) # -1.0e-6
+    print(printFloat64(1e2)) # 1.e2
+    print(printFloat64(2e-2)) # 2.e-2
+    print(printFloat64(-3e6)) # -3.e6
+    print(printFloat64(-4e-6)) # -4.e-6
     print()
 
     print(printFloat(-1e-6, FLOAT32, base10_significant_digits=MAX_BASE10_SIGNIFICANT_DIGITS(FLOAT32))) # -0.00000100
