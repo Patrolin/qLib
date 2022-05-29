@@ -27,10 +27,3 @@ def printInt(int_: int, base=10) -> str:
         acc_string_reversed += acc_string[len(acc_string) - i]
     sign = "" if (int_ > 0) else "-"
     return sign + acc_string_reversed
-
-if __name__ == "__main__":
-    print(parseInt("1234a")) # 1234
-    print(parseInt("003456a")) # 3456
-    print(printInt(1234)) # 1234
-    print(printInt(-3456)) # 3456
-    print(printInt(0)) # 0

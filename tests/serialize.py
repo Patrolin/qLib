@@ -18,14 +18,18 @@ def testPrintInt():
 
 @test
 def testParseString():
-    assert parseString("")[1] == 0
-    assert parseString("abc")[1] == 0
-    assert parseString("\"")[1] == -1
-    assert parseString("\"abc")[1] == -4
+    assert parseString("") == ("", 0)
+    assert parseString("abc") == ("", 0)
+    assert parseString("\"") == ("", -1)
+    assert parseString("\"abc") == ("abc", -4)
     assert parseString("\"abc\"") == ("abc", 5)
     assert parseString("\"hello world\"") == ("hello world", 13)
+    assert parseString("\"23456\\\" 01234\"") == ("23456\" 01234", 15)
+    assert parseString("\"234.6\\u901\"") == ("234.6", -11)
+    assert parseString("\"234.6\\u9012\"") == ("234.6递", 13)
 
 @test
 def testPrintString():
     assert printString("") == "\"\""
     assert printString("hello world") == "\"hello world\""
+    assert printString("hello\" world") == "\"hello\\\" world\"", printString("hello\" world")

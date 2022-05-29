@@ -13,10 +13,10 @@ def parseString(string: str) -> tuple[str, int]:
             if string[i] == "u":
                 i += 1
                 c, j = parseInt(string[i:i + 4], base=16)
+                i += j
                 if j != 4:
                     break
                 acc += chr(c)
-                i += j
             else:
                 acc += string[i]
                 i += 1
@@ -28,7 +28,13 @@ def parseString(string: str) -> tuple[str, int]:
     return acc, -i
 
 def printString(string: str) -> str:
-    return f"\"{string}\""
+    acc = ""
+    for c in string:
+        if c == "\"":
+            acc += "\\\""
+        else:
+            acc += c
+    return f"\"{acc}\""
 
 if __name__ == "__main__":
     print(parseString("\"234.6\"")) # 234.6
