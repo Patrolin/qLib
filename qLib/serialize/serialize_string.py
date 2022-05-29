@@ -1,4 +1,4 @@
-from qLib.serialize.int_ import parseInt
+from qLib.serialize.serialize_int import parseInt
 
 def parseString(string: str) -> tuple[str, int]:
     if len(string) == 0 or string[0] != "\"":

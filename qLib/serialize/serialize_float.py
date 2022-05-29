@@ -2,7 +2,7 @@ import struct
 from typing import NamedTuple
 from qLib.math_ import ilog10, log10, ceil, floor
 from qLib.serialize import indexOrMinusOne, DIGITS
-from qLib.serialize.int_ import parseInt, printInt
+from qLib.serialize.serialize_int import parseInt, printInt
 
 class FloatBits(NamedTuple):
     exponent: int
@@ -58,7 +58,7 @@ def parseFloat(string: str, floatBits: FloatBits) -> tuple[float, int]:
         acc = acc + (MAX_EXPONENT << floatBits.mantissa) # inf
         acc_float = _packFloat(acc, floatBits)
         return acc_float, i
-    # TODO: parse NAN(..)?
+    # TODO: parse NaN(..)?
 
     # integer
     exponent = 0

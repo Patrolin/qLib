@@ -1,6 +1,4 @@
-from qLib.serialize import indexOrMinusOne
-
-DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
+from qLib.serialize import indexOrMinusOne, DIGITS
 
 def parseInt(string: str, base=10) -> tuple[int, int]:
     acc = 0
